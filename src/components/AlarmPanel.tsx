@@ -39,8 +39,11 @@ export const AlarmPanel: React.FC<AlarmPanelProps> = ({
     { value: 'chime', label: 'Gentle Chime' },
     { value: 'birds', label: 'Bird Song' },
     { value: 'ocean', label: 'Ocean Waves' },
-    { value: 'piano', label: 'Piano Melody' }
+    { value: 'piano', label: 'Piano Melody' },
+    { value: 'custom', label: 'Custom Sound' }
   ];
+
+  const [customSoundFile, setCustomSoundFile] = useState<string>('');
 
   const addAlarm = () => {
     const alarm: Alarm = {
@@ -221,6 +224,35 @@ export const AlarmPanel: React.FC<AlarmPanelProps> = ({
                 className="mt-1"
               />
             </div>
+            
+            {/* Custom Sound File Upload */}
+            {newAlarm.sound === 'custom' && (
+              <div>
+                <Label htmlFor="custom-sound" className="text-sm font-medium">Custom Sound File</Label>
+                <Input
+                  id="custom-sound"
+                  type="file"
+                  accept="audio/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const url = URL.createObjectURL(file);
+                      setCustomSoundFile(url);
+                    }
+                  }}
+                  className="mt-1"
+                />
+                {customSoundFile && (
+                  <div className="mt-2">
+                    <audio controls className="w-full">
+                      <source src={customSoundFile} />
+                      Your browser does not support the audio element.
+                    </audio>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <div className="flex items-center space-x-2">
               <Switch
                 checked={newAlarm.recurring}

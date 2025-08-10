@@ -3,6 +3,8 @@ import { CalendarGrid } from '@/components/CalendarGrid';
 import { ProjectSidebar } from '@/components/ProjectSidebar';
 import { AlarmPanel } from '@/components/AlarmPanel';
 import { TaskModal } from '@/components/TaskModal';
+import { ProjectModal } from '@/components/ProjectModal';
+import { ProjectTasksModal } from '@/components/ProjectTasksModal';
 import { Button } from '@/components/ui/button';
 import { Calendar, Bell, Settings } from 'lucide-react';
 import { addDays } from 'date-fns';
@@ -11,6 +13,8 @@ const Index = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState<Date | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [isProjectTasksModalOpen, setIsProjectTasksModalOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>();
   const [showAlarms, setShowAlarms] = useState(false);
 
@@ -49,7 +53,9 @@ const Index = () => {
       projectId: '1',
       startTime: new Date(new Date().setHours(9, 0, 0, 0)),
       duration: 1,
-      color: '#10B981'
+      color: '#10B981',
+      priority: 'medium',
+      completed: false
     },
     {
       id: '2',
@@ -57,7 +63,9 @@ const Index = () => {
       projectId: '2',
       startTime: new Date(new Date().setHours(7, 0, 0, 0)),
       duration: 1,
-      color: '#F59E0B'
+      color: '#F59E0B',
+      priority: 'high',
+      completed: false
     }
   ]);
 
@@ -79,11 +87,41 @@ const Index = () => {
 
   const handleCreateTask = (task: any) => {
     setTasks([...tasks, task]);
+    // Update project task counts
+    setProjects(projects.map(project => 
+      project.id === task.projectId 
+        ? { ...project, tasksCount: project.tasksCount + 1 }
+        : project
+    ));
   };
 
-  const handleCreateProject = () => {
-    // In a real app, this would open a project creation modal
-    console.log('Create new project');
+  const handleTaskUpdate = (updatedTasks: any[]) => {
+    setTasks(updatedTasks);
+    // Update project completion counts
+    setProjects(projects.map(project => {
+      const projectTasks = updatedTasks.filter(task => task.projectId === project.id);
+      const completedTasks = projectTasks.filter(task => task.completed);
+      return {
+        ...project,
+        tasksCount: projectTasks.length,
+        completedTasks: completedTasks.length
+      };
+    }));
+  };
+
+  const handleCreateProject = (projectData: any) => {
+    const newProject = {
+      id: Date.now().toString(),
+      ...projectData,
+      tasksCount: 0,
+      completedTasks: 0
+    };
+    setProjects([...projects, newProject]);
+  };
+
+  const handleProjectSelect = (projectId: string) => {
+    setSelectedProjectId(projectId);
+    setIsProjectTasksModalOpen(true);
   };
 
   return (
@@ -126,8 +164,8 @@ const Index = () => {
           {/* Project Sidebar */}
           <ProjectSidebar
             projects={projects}
-            onCreateProject={handleCreateProject}
-            onProjectSelect={setSelectedProjectId}
+            onCreateProject={() => setIsProjectModalOpen(true)}
+            onProjectSelect={handleProjectSelect}
             selectedProjectId={selectedProjectId}
           />
 
@@ -160,6 +198,22 @@ const Index = () => {
         onCreateTask={handleCreateTask}
         selectedTime={selectedTime}
         projects={projects}
+      />
+
+      {/* Project Modal */}
+      <ProjectModal
+        isOpen={isProjectModalOpen}
+        onClose={() => setIsProjectModalOpen(false)}
+        onCreateProject={handleCreateProject}
+      />
+
+      {/* Project Tasks Modal */}
+      <ProjectTasksModal
+        isOpen={isProjectTasksModalOpen}
+        onClose={() => setIsProjectTasksModalOpen(false)}
+        project={projects.find(p => p.id === selectedProjectId) || null}
+        tasks={tasks}
+        onTaskUpdate={handleTaskUpdate}
       />
     </div>
   );
