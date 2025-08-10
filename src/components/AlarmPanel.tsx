@@ -1,0 +1,256 @@
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Bell, Volume2, Clock, Plus, Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface Alarm {
+  id: string;
+  time: string;
+  enabled: boolean;
+  sound: string;
+  label: string;
+  recurring: boolean;
+}
+
+interface AlarmPanelProps {
+  alarms: Alarm[];
+  onAlarmUpdate: (alarms: Alarm[]) => void;
+}
+
+export const AlarmPanel: React.FC<AlarmPanelProps> = ({
+  alarms,
+  onAlarmUpdate
+}) => {
+  const [isAddingAlarm, setIsAddingAlarm] = useState(false);
+  const [newAlarm, setNewAlarm] = useState({
+    time: '07:00',
+    label: 'Morning Alarm',
+    sound: 'bell',
+    recurring: true
+  });
+
+  const alarmSounds = [
+    { value: 'bell', label: 'Classic Bell' },
+    { value: 'chime', label: 'Gentle Chime' },
+    { value: 'birds', label: 'Bird Song' },
+    { value: 'ocean', label: 'Ocean Waves' },
+    { value: 'piano', label: 'Piano Melody' }
+  ];
+
+  const addAlarm = () => {
+    const alarm: Alarm = {
+      id: Date.now().toString(),
+      time: newAlarm.time,
+      enabled: true,
+      sound: newAlarm.sound,
+      label: newAlarm.label,
+      recurring: newAlarm.recurring
+    };
+    onAlarmUpdate([...alarms, alarm]);
+    setIsAddingAlarm(false);
+    setNewAlarm({
+      time: '07:00',
+      label: 'Morning Alarm',
+      sound: 'bell',
+      recurring: true
+    });
+  };
+
+  const toggleAlarm = (id: string) => {
+    const updated = alarms.map(alarm =>
+      alarm.id === id ? { ...alarm, enabled: !alarm.enabled } : alarm
+    );
+    onAlarmUpdate(updated);
+  };
+
+  const deleteAlarm = (id: string) => {
+    const updated = alarms.filter(alarm => alarm.id !== id);
+    onAlarmUpdate(updated);
+  };
+
+  const checkAlarms = () => {
+    const now = new Date();
+    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    
+    alarms.forEach(alarm => {
+      if (alarm.enabled && alarm.time === currentTime) {
+        // Trigger alarm sound
+        playAlarmSound(alarm.sound);
+        showAlarmNotification(alarm.label);
+      }
+    });
+  };
+
+  const playAlarmSound = (sound: string) => {
+    // This would play the actual alarm sound
+    console.log(`Playing alarm sound: ${sound}`);
+    // You could integrate with Web Audio API or audio files here
+  };
+
+  const showAlarmNotification = (label: string) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('Alarm', {
+        body: label,
+        icon: '/favicon.ico'
+      });
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(checkAlarms, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [alarms]);
+
+  useEffect(() => {
+    if ('Notification' in window) {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  return (
+    <Card className="bg-gradient-card shadow-medium">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Bell className="w-5 h-5 text-primary" />
+            <CardTitle className="text-lg">Alarms</CardTitle>
+          </div>
+          <Button
+            onClick={() => setIsAddingAlarm(true)}
+            size="sm"
+            variant="outline"
+            className="border-primary/20 hover:bg-primary/5"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Alarm
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Existing Alarms */}
+        {alarms.map(alarm => (
+          <div
+            key={alarm.id}
+            className={cn(
+              "flex items-center justify-between p-3 rounded-lg border transition-all duration-200",
+              alarm.enabled 
+                ? "bg-primary/5 border-primary/20" 
+                : "bg-muted/30 border-border"
+            )}
+          >
+            <div className="flex items-center space-x-3">
+              <Switch
+                checked={alarm.enabled}
+                onCheckedChange={() => toggleAlarm(alarm.id)}
+                className="data-[state=checked]:bg-primary"
+              />
+              <div>
+                <div className={cn(
+                  "text-lg font-semibold",
+                  alarm.enabled ? "text-foreground" : "text-muted-foreground"
+                )}>
+                  {alarm.time}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {alarm.label} • {alarmSounds.find(s => s.value === alarm.sound)?.label}
+                </div>
+                {alarm.recurring && (
+                  <div className="text-xs text-accent font-medium">Recurring Daily</div>
+                )}
+              </div>
+            </div>
+            <Button
+              onClick={() => deleteAlarm(alarm.id)}
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive-foreground hover:bg-destructive/10"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        ))}
+
+        {/* Add New Alarm Form */}
+        {isAddingAlarm && (
+          <div className="space-y-4 p-4 border border-primary/20 rounded-lg bg-primary/5">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="alarm-time" className="text-sm font-medium">Time</Label>
+                <Input
+                  id="alarm-time"
+                  type="time"
+                  value={newAlarm.time}
+                  onChange={(e) => setNewAlarm({ ...newAlarm, time: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="alarm-sound" className="text-sm font-medium">Sound</Label>
+                <Select
+                  value={newAlarm.sound}
+                  onValueChange={(value) => setNewAlarm({ ...newAlarm, sound: value })}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {alarmSounds.map(sound => (
+                      <SelectItem key={sound.value} value={sound.value}>
+                        <div className="flex items-center space-x-2">
+                          <Volume2 className="w-4 h-4" />
+                          <span>{sound.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="alarm-label" className="text-sm font-medium">Label</Label>
+              <Input
+                id="alarm-label"
+                value={newAlarm.label}
+                onChange={(e) => setNewAlarm({ ...newAlarm, label: e.target.value })}
+                placeholder="Morning Alarm"
+                className="mt-1"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={newAlarm.recurring}
+                onCheckedChange={(checked) => setNewAlarm({ ...newAlarm, recurring: checked })}
+              />
+              <Label className="text-sm">Recurring daily</Label>
+            </div>
+            <div className="flex space-x-2">
+              <Button onClick={addAlarm} className="bg-gradient-primary text-white">
+                <Clock className="w-4 h-4 mr-2" />
+                Add Alarm
+              </Button>
+              <Button
+                onClick={() => setIsAddingAlarm(false)}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {alarms.length === 0 && !isAddingAlarm && (
+          <div className="text-center py-8 text-muted-foreground">
+            <Bell className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>No alarms set</p>
+            <p className="text-sm">Add your first alarm to get started</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
