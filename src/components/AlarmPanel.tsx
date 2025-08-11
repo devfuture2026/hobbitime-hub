@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bell, Volume2, Clock, Plus, Trash2 } from 'lucide-react';
+import { Bell, Volume2, Clock, Plus, Trash2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Alarm {
@@ -27,6 +27,7 @@ export const AlarmPanel: React.FC<AlarmPanelProps> = ({
   onAlarmUpdate
 }) => {
   const [isAddingAlarm, setIsAddingAlarm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [newAlarm, setNewAlarm] = useState({
     time: '07:00',
     label: 'Morning Alarm',
@@ -115,13 +116,18 @@ export const AlarmPanel: React.FC<AlarmPanelProps> = ({
     }
   }, []);
 
+  const filteredAlarms = alarms.filter(alarm =>
+    alarm.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    alarm.time.includes(searchQuery)
+  );
+
   return (
     <Card className="bg-gradient-card shadow-medium">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
             <Bell className="w-5 h-5 text-primary" />
-            <CardTitle className="text-lg">Alarms</CardTitle>
+            <CardTitle className="text-lg">Alarms ({alarms.length})</CardTitle>
           </div>
           <Button
             onClick={() => setIsAddingAlarm(true)}
@@ -129,54 +135,85 @@ export const AlarmPanel: React.FC<AlarmPanelProps> = ({
             variant="outline"
             className="border-primary/20 hover:bg-primary/5"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Alarm
+            <Plus className="w-4 h-4" />
           </Button>
+        </div>
+        
+        {/* Search field */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            placeholder="Search alarms..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 text-sm border-primary/20"
+          />
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Existing Alarms */}
-        {alarms.map(alarm => (
-          <div
-            key={alarm.id}
-            className={cn(
-              "flex items-center justify-between p-3 rounded-lg border transition-all duration-200",
-              alarm.enabled 
-                ? "bg-primary/5 border-primary/20" 
-                : "bg-muted/30 border-border"
-            )}
-          >
-            <div className="flex items-center space-x-3">
-              <Switch
-                checked={alarm.enabled}
-                onCheckedChange={() => toggleAlarm(alarm.id)}
-                className="data-[state=checked]:bg-primary"
-              />
-              <div>
-                <div className={cn(
-                  "text-lg font-semibold",
-                  alarm.enabled ? "text-foreground" : "text-muted-foreground"
-                )}>
-                  {alarm.time}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {alarm.label} • {alarmSounds.find(s => s.value === alarm.sound)?.label}
-                </div>
-                {alarm.recurring && (
-                  <div className="text-xs text-accent font-medium">Recurring Daily</div>
-                )}
-              </div>
+        <div className="space-y-3 max-h-96 overflow-y-auto">
+          {filteredAlarms.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">
+                {searchQuery ? 'No alarms match your search' : 'No alarms set'}
+              </p>
             </div>
-            <Button
-              onClick={() => deleteAlarm(alarm.id)}
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive-foreground hover:bg-destructive/10"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        ))}
+          ) : (
+            filteredAlarms.map(alarm => (
+              <div
+                key={alarm.id}
+                className={cn(
+                  "flex items-center justify-between p-3 rounded-lg border transition-all duration-200 hover:shadow-soft",
+                  alarm.enabled 
+                    ? "bg-primary/5 border-primary/20" 
+                    : "bg-muted/30 border-border"
+                )}
+              >
+                <div className="flex items-center space-x-3">
+                  <Switch
+                    checked={alarm.enabled}
+                    onCheckedChange={() => toggleAlarm(alarm.id)}
+                    className="data-[state=checked]:bg-primary"
+                  />
+                  <div>
+                    <div className={cn(
+                      "text-xl font-semibold font-mono",
+                      alarm.enabled ? "text-foreground" : "text-muted-foreground"
+                    )}>
+                      {alarm.time}
+                    </div>
+                    <div className={cn(
+                      "text-sm font-medium",
+                      alarm.enabled ? "text-foreground" : "text-muted-foreground"
+                    )}>
+                      {alarm.label}
+                    </div>
+                    <div className="text-xs text-muted-foreground flex items-center space-x-2">
+                      <Volume2 className="w-3 h-3" />
+                      <span>{alarmSounds.find(s => s.value === alarm.sound)?.label}</span>
+                      {alarm.recurring && (
+                        <>
+                          <span>•</span>
+                          <span className="text-accent font-medium">Daily</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => deleteAlarm(alarm.id)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive-foreground hover:bg-destructive/10 h-8 w-8 p-0"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))
+          )}
+        </div>
 
         {/* Add New Alarm Form */}
         {isAddingAlarm && (
@@ -275,13 +312,6 @@ export const AlarmPanel: React.FC<AlarmPanelProps> = ({
           </div>
         )}
 
-        {alarms.length === 0 && !isAddingAlarm && (
-          <div className="text-center py-8 text-muted-foreground">
-            <Bell className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>No alarms set</p>
-            <p className="text-sm">Add your first alarm to get started</p>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

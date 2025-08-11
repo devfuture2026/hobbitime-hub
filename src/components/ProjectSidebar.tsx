@@ -19,6 +19,7 @@ interface ProjectSidebarProps {
   projects: Project[];
   onCreateProject: () => void;
   onProjectSelect: (projectId: string) => void;
+  onQuickAddTask: (projectId: string) => void;
   selectedProjectId?: string;
 }
 
@@ -26,6 +27,7 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
   projects,
   onCreateProject,
   onProjectSelect,
+  onQuickAddTask,
   selectedProjectId
 }) => {
   const getCategoryIcon = (category: Project['category']) => {
@@ -48,14 +50,14 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
     <div className="w-80 bg-gradient-subtle border-r border-border p-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-foreground">Projects</h2>
+        <h2 className="text-lg font-semibold text-foreground">Projects</h2>
         <Button 
           onClick={onCreateProject}
           size="sm"
           className="bg-gradient-primary text-white hover:shadow-glow transition-all duration-300"
         >
-          <Plus className="w-4 h-4 mr-2" />
-          New Project
+          <Plus className="w-4 h-4 mr-1" />
+          New
         </Button>
       </div>
 
@@ -70,7 +72,7 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
             <Card
               key={project.id}
               className={cn(
-                "cursor-pointer transition-all duration-200 hover:shadow-medium border",
+                "cursor-pointer transition-all duration-200 hover:shadow-medium border group",
                 selectedProjectId === project.id 
                   ? "ring-2 ring-primary bg-primary/5 border-primary/30" 
                   : "hover:border-primary/20"
@@ -79,24 +81,34 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
             >
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 flex-1 min-w-0">
                     <div 
-                      className="w-3 h-3 rounded-full"
+                      className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: project.color }}
                     />
                     <CardTitle className="text-sm font-medium truncate">
                       {project.name}
                     </CardTitle>
                   </div>
-                  <Badge 
-                    variant="secondary" 
-                    className={cn("text-xs", getCategoryColor(project.category))}
-                  >
-                    <div className="flex items-center space-x-1">
+                  <div className="flex items-center space-x-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onQuickAddTask(project.id);
+                      }}
+                    >
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                    <Badge 
+                      variant="secondary" 
+                      className={cn("text-xs", getCategoryColor(project.category))}
+                    >
                       {getCategoryIcon(project.category)}
-                      <span className="capitalize">{project.category}</span>
-                    </div>
-                  </Badge>
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
@@ -107,7 +119,7 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                   </div>
                   <Progress 
                     value={progress} 
-                    className="h-2 bg-secondary/50"
+                    className="h-1.5 bg-secondary/50"
                   />
                 </div>
               </CardContent>
@@ -119,18 +131,18 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
       {/* Quick Stats */}
       <Card className="bg-gradient-card border-primary/20">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-primary">Today's Overview</CardTitle>
+          <CardTitle className="text-sm font-medium text-primary">Quick Stats</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="grid grid-cols-2 gap-4 text-center">
+          <div className="grid grid-cols-2 gap-3 text-center">
             <div>
-              <div className="text-2xl font-bold text-foreground">
+              <div className="text-xl font-bold text-foreground">
                 {projects.reduce((acc, p) => acc + p.tasksCount, 0)}
               </div>
               <div className="text-xs text-muted-foreground">Total Tasks</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-accent">
+              <div className="text-xl font-bold text-accent">
                 {projects.reduce((acc, p) => acc + p.completedTasks, 0)}
               </div>
               <div className="text-xs text-muted-foreground">Completed</div>

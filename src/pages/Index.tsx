@@ -5,9 +5,9 @@ import { AlarmPanel } from '@/components/AlarmPanel';
 import { TaskModal } from '@/components/TaskModal';
 import { ProjectModal } from '@/components/ProjectModal';
 import { ProjectTasksModal } from '@/components/ProjectTasksModal';
-import { Button } from '@/components/ui/button';
-import { Calendar, Bell, Settings } from 'lucide-react';
-import { addDays } from 'date-fns';
+import { Header } from '@/components/Header';
+import { TodayOverview } from '@/components/TodayOverview';
+import { addDays, startOfToday } from 'date-fns';
 
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -16,7 +16,9 @@ const Index = () => {
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isProjectTasksModalOpen, setIsProjectTasksModalOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>();
+  const [quickAddProjectId, setQuickAddProjectId] = useState<string>();
   const [showAlarms, setShowAlarms] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Sample data - in a real app, this would come from a backend
   const [projects, setProjects] = useState([
@@ -54,7 +56,7 @@ const Index = () => {
       startTime: new Date(new Date().setHours(9, 0, 0, 0)),
       duration: 1,
       color: '#10B981',
-      priority: 'medium',
+      priority: 'medium' as const,
       completed: false
     },
     {
@@ -64,7 +66,7 @@ const Index = () => {
       startTime: new Date(new Date().setHours(7, 0, 0, 0)),
       duration: 1,
       color: '#F59E0B',
-      priority: 'high',
+      priority: 'high' as const,
       completed: false
     }
   ]);
@@ -124,39 +126,38 @@ const Index = () => {
     setIsProjectTasksModalOpen(true);
   };
 
+  const handleQuickAddTask = (projectId: string) => {
+    setQuickAddProjectId(projectId);
+    setSelectedTime(new Date());
+    setIsTaskModalOpen(true);
+  };
+
+  const handleGoToToday = () => {
+    setSelectedDate(startOfToday());
+  };
+
+  const handleTaskDrop = (taskId: string, newTime: Date) => {
+    setTasks(prevTasks => 
+      prevTasks.map(task => 
+        task.id === taskId 
+          ? { ...task, startTime: newTime }
+          : task
+      )
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-subtle">
-      {/* Header */}
-      <header className="bg-card border-b border-border shadow-soft">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gradient-primary rounded-lg">
-                <Calendar className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold text-foreground">Productive Calendar</h1>
-                <p className="text-sm text-muted-foreground">Track your hobbies and projects</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant={showAlarms ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowAlarms(!showAlarms)}
-                className={showAlarms ? "bg-primary" : "border-primary/20"}
-              >
-                <Bell className="w-4 h-4 mr-2" />
-                Alarms
-              </Button>
-              <Button variant="outline" size="sm" className="border-primary/20">
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Enhanced Header */}
+      <Header
+        selectedDate={selectedDate}
+        onDateChange={setSelectedDate}
+        showAlarms={showAlarms}
+        onToggleAlarms={() => setShowAlarms(!showAlarms)}
+        onGoToToday={handleGoToToday}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -166,6 +167,7 @@ const Index = () => {
             projects={projects}
             onCreateProject={() => setIsProjectModalOpen(true)}
             onProjectSelect={handleProjectSelect}
+            onQuickAddTask={handleQuickAddTask}
             selectedProjectId={selectedProjectId}
           />
 
@@ -175,9 +177,16 @@ const Index = () => {
               selectedDate={selectedDate}
               tasks={tasks}
               onTimeSlotClick={handleTimeSlotClick}
+              onTaskDrop={handleTaskDrop}
               currentTime={new Date()}
             />
           </div>
+
+          {/* Today's Overview Panel */}
+          <TodayOverview
+            tasks={tasks}
+            projects={projects}
+          />
 
           {/* Alarm Panel (Conditional) */}
           {showAlarms && (
@@ -194,10 +203,14 @@ const Index = () => {
       {/* Task Modal */}
       <TaskModal
         isOpen={isTaskModalOpen}
-        onClose={() => setIsTaskModalOpen(false)}
+        onClose={() => {
+          setIsTaskModalOpen(false);
+          setQuickAddProjectId(undefined);
+        }}
         onCreateTask={handleCreateTask}
         selectedTime={selectedTime}
         projects={projects}
+        preselectedProjectId={quickAddProjectId}
       />
 
       {/* Project Modal */}

@@ -21,6 +21,7 @@ interface TaskModalProps {
   onCreateTask: (task: any) => void;
   selectedTime?: Date;
   projects: Project[];
+  preselectedProjectId?: string;
 }
 
 export const TaskModal: React.FC<TaskModalProps> = ({
@@ -28,15 +29,23 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   onClose,
   onCreateTask,
   selectedTime,
-  projects
+  projects,
+  preselectedProjectId
 }) => {
   const [taskData, setTaskData] = useState({
     title: '',
     description: '',
-    projectId: '',
+    projectId: preselectedProjectId || '',
     duration: 1,
     priority: 'medium'
   });
+
+  // Update projectId when preselectedProjectId changes
+  React.useEffect(() => {
+    if (preselectedProjectId) {
+      setTaskData(prev => ({ ...prev, projectId: preselectedProjectId }));
+    }
+  }, [preselectedProjectId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
