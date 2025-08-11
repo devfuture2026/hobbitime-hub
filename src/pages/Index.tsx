@@ -178,6 +178,7 @@ const Index = () => {
               tasks={tasks}
               onTimeSlotClick={handleTimeSlotClick}
               onTaskDrop={handleTaskDrop}
+              onDateChange={setSelectedDate}
               currentTime={new Date()}
             />
           </div>
