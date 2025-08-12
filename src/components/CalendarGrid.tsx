@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { format, startOfWeek, addDays, addHours, isSameHour, addWeeks, subWeeks } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, startOfWeek, addDays, addHours, isSameHour, addWeeks, subWeeks, startOfDay, addMonths, subMonths } from 'date-fns';
+import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface Task {
   id: string;
@@ -12,6 +13,8 @@ interface Task {
   duration: number; // in hours
   color: string;
 }
+
+type CalendarView = 'daily' | 'weekly' | 'monthly';
 
 interface CalendarGridProps {
   selectedDate: Date;
@@ -30,16 +33,62 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
   onDateChange,
   currentTime = new Date()
 }) => {
+  const [view, setView] = useState<CalendarView>('weekly');
+  
   const startWeek = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(startWeek, i));
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
-  const handlePreviousWeek = () => {
-    onDateChange(subWeeks(selectedDate, 1));
+  // Get display days based on view
+  const getDisplayDays = () => {
+    switch (view) {
+      case 'daily':
+        return [selectedDate];
+      case 'monthly':
+        // For monthly view, show a simplified weekly view for now
+        return weekDays;
+      default:
+        return weekDays;
+    }
   };
 
-  const handleNextWeek = () => {
-    onDateChange(addWeeks(selectedDate, 1));
+  const displayDays = getDisplayDays();
+
+  const handlePrevious = () => {
+    switch (view) {
+      case 'daily':
+        onDateChange(addDays(selectedDate, -1));
+        break;
+      case 'monthly':
+        onDateChange(subMonths(selectedDate, 1));
+        break;
+      default:
+        onDateChange(subWeeks(selectedDate, 1));
+    }
+  };
+
+  const handleNext = () => {
+    switch (view) {
+      case 'daily':
+        onDateChange(addDays(selectedDate, 1));
+        break;
+      case 'monthly':
+        onDateChange(addMonths(selectedDate, 1));
+        break;
+      default:
+        onDateChange(addWeeks(selectedDate, 1));
+    }
+  };
+
+  const getNavigationLabel = () => {
+    switch (view) {
+      case 'daily':
+        return format(selectedDate, 'EEEE, MMM d, yyyy');
+      case 'monthly':
+        return format(selectedDate, 'MMMM yyyy');
+      default:
+        return `${format(startWeek, 'MMM d')} - ${format(addDays(startWeek, 6), 'MMM d, yyyy')}`;
+    }
   };
 
   const getTasksForTimeSlot = (day: Date, hour: number) => {
@@ -73,40 +122,63 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
 
   return (
     <div className="flex-1 bg-gradient-card rounded-lg shadow-medium overflow-hidden flex flex-col">
-      {/* Week Navigation Header */}
+      {/* Navigation Header */}
       <div className="flex items-center justify-between p-3 border-b border-border bg-card">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={handlePreviousWeek}
-          className="h-8 w-8 p-0"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <div className="text-sm font-medium text-foreground">
-          {format(startWeek, 'MMM d')} - {format(addDays(startWeek, 6), 'MMM d, yyyy')}
+        <div className="flex items-center space-x-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handlePrevious}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div className="text-sm font-medium text-foreground">
+            {getNavigationLabel()}
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleNext}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={handleNextWeek}
-          className="h-8 w-8 p-0"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+        
+        {/* View Selector */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8">
+              <Eye className="w-4 h-4 mr-1" />
+              View
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setView('daily')}>
+              Daily
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setView('weekly')}>
+              Weekly
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setView('monthly')}>
+              Monthly
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {/* Header with days - Fixed grid alignment */}
-      <div className="grid grid-cols-[80px_repeat(7,1fr)] border-b border-border bg-card sticky top-0 z-10">
+      {/* Header with days - Dynamic grid alignment */}
+      <div className={`grid border-b border-border bg-card sticky top-0 z-10 ${view === 'daily' ? 'grid-cols-[80px_1fr]' : 'grid-cols-[80px_repeat(7,1fr)]'}`}>
         <div className="p-3 border-r border-border bg-muted/50 flex items-center justify-center">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Time</span>
         </div>
-        {weekDays.map((day, index) => {
+        {displayDays.map((day, index) => {
           const isToday = day.toDateString() === new Date().toDateString();
           return (
             <div key={day.toISOString()} className={cn(
               "p-3 text-center bg-muted/20 flex flex-col items-center justify-center",
-              index < 6 ? "border-r border-border" : ""
+              (view !== 'daily' && index < displayDays.length - 1) ? "border-r border-border" : ""
             )}>
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 {format(day, 'EEE')}
@@ -126,7 +198,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
       <div className="flex-1 relative" style={{ scrollbarGutter: 'stable both-edges' }}>
         <div className="h-full overflow-y-auto pr-2">
           {hours.map(hour => (
-            <div key={hour} className="grid grid-cols-[80px_repeat(7,1fr)] relative border-b border-border/30 last:border-b-0" style={{ minHeight: '60px' }}>
+            <div key={hour} className={`grid relative border-b border-border/30 last:border-b-0 ${view === 'daily' ? 'grid-cols-[80px_1fr]' : 'grid-cols-[80px_repeat(7,1fr)]'}`} style={{ minHeight: '60px' }}>
               {/* Time label - Aligned with grid */}
               <div className="relative border-r border-border flex items-start justify-end pr-2 pt-1">
                 {hour > 0 && (
@@ -137,8 +209,8 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                 <div className="absolute top-0 right-0 w-2 h-px bg-border" />
               </div>
 
-              {/* Day slots - Fixed alignment and spacing */}
-              {weekDays.map((day, dayIndex) => {
+              {/* Day slots - Dynamic alignment and spacing */}
+              {displayDays.map((day, dayIndex) => {
                 const slotTasks = getTasksForTimeSlot(day, hour);
                 const isCurrentSlot = isCurrentTimeSlot(day, hour);
                 const slotTime = addHours(new Date(day.getFullYear(), day.getMonth(), day.getDate()), hour);
@@ -148,7 +220,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                     key={`${day.toISOString()}-${hour}`}
                     className={cn(
                       "relative cursor-pointer transition-all duration-150 min-h-[60px] flex-1",
-                      dayIndex < 6 ? "border-r border-border" : "",
+                      (view !== 'daily' && dayIndex < displayDays.length - 1) ? "border-r border-border" : "",
                       "hover:bg-timeSlot-hover",
                       isCurrentSlot && "bg-timeSlot-selected"
                     )}

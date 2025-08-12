@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CalendarGrid } from '@/components/CalendarGrid';
 import { ProjectSidebar } from '@/components/ProjectSidebar';
 import { AlarmPanel } from '@/components/AlarmPanel';
@@ -7,6 +7,7 @@ import { ProjectModal } from '@/components/ProjectModal';
 import { ProjectTasksModal } from '@/components/ProjectTasksModal';
 import { Header } from '@/components/Header';
 import { TodayOverview } from '@/components/TodayOverview';
+import { SettingsModal } from '@/components/SettingsModal';
 import { addDays, startOfToday } from 'date-fns';
 
 const Index = () => {
@@ -19,6 +20,18 @@ const Index = () => {
   const [quickAddProjectId, setQuickAddProjectId] = useState<string>();
   const [showAlarms, setShowAlarms] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [timezone, setTimezone] = useState('UTC');
+
+  // Apply dark mode class to document
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
 
   // Sample data - in a real app, this would come from a backend
   const [projects, setProjects] = useState([
@@ -157,6 +170,7 @@ const Index = () => {
         onGoToToday={handleGoToToday}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       {/* Main Content */}
@@ -228,6 +242,16 @@ const Index = () => {
         project={projects.find(p => p.id === selectedProjectId) || null}
         tasks={tasks}
         onTaskUpdate={handleTaskUpdate}
+      />
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        darkMode={darkMode}
+        onDarkModeToggle={setDarkMode}
+        timezone={timezone}
+        onTimezoneChange={setTimezone}
       />
     </div>
   );

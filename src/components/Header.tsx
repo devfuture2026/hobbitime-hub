@@ -13,6 +13,7 @@ interface HeaderProps {
   onGoToToday: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onOpenSettings: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,7 +23,8 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleAlarms,
   onGoToToday,
   searchQuery,
-  onSearchChange
+  onSearchChange,
+  onOpenSettings
 }) => {
   const currentMonth = format(selectedDate, 'MMMM yyyy');
   
@@ -110,7 +112,12 @@ export const Header: React.FC<HeaderProps> = ({
               Alarms
             </Button>
             
-            <Button variant="outline" size="sm" className="border-primary/20">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-primary/20"
+              onClick={onOpenSettings}
+            >
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </Button>
