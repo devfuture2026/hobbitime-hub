@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Bell, Settings, Search, Clock } from 'lucide-react';
+import { Calendar, Bell, Search, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { SettingsModal } from './SettingsModal';
 import { format, addMonths, subMonths } from 'date-fns';
+
+type ViewMode = 'day' | 'week' | 'month';
 
 interface HeaderProps {
   selectedDate: Date;
@@ -13,6 +16,14 @@ interface HeaderProps {
   onGoToToday: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
+  onNavigatePrevious: () => void;
+  onNavigateNext: () => void;
+  darkMode: boolean;
+  onDarkModeToggle: () => void;
+  timezone: string;
+  onTimezoneChange: (timezone: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,25 +33,36 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleAlarms,
   onGoToToday,
   searchQuery,
-  onSearchChange
+  onSearchChange,
+  viewMode,
+  onViewModeChange,
+  onNavigatePrevious,
+  onNavigateNext,
+  darkMode,
+  onDarkModeToggle,
+  timezone,
+  onTimezoneChange
 }) => {
-  const currentMonth = format(selectedDate, 'MMMM yyyy');
-  
-  const generateMonthOptions = () => {
-    const options = [];
-    for (let i = -6; i <= 6; i++) {
-      const monthDate = addMonths(new Date(), i);
-      const value = format(monthDate, 'yyyy-MM');
-      const label = format(monthDate, 'MMMM yyyy');
-      options.push({ value, label });
+  const getDisplayText = () => {
+    switch (viewMode) {
+      case 'day':
+        return format(selectedDate, 'EEEE, MMMM d, yyyy');
+      case 'week':
+        return format(selectedDate, 'MMMM yyyy');
+      case 'month':
+        return format(selectedDate, 'MMMM yyyy');
+      default:
+        return format(selectedDate, 'MMMM yyyy');
     }
-    return options;
   };
 
-  const handleMonthChange = (value: string) => {
-    const [year, month] = value.split('-');
-    const newDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-    onDateChange(newDate);
+  const getViewModeLabel = (mode: ViewMode) => {
+    switch (mode) {
+      case 'day': return 'Day';
+      case 'week': return 'Week';
+      case 'month': return 'Month';
+      default: return 'Week';
+    }
   };
 
   return (
@@ -59,20 +81,30 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             </div>
             
-            {/* Month selector and Today button */}
+            {/* Navigation and View Controls */}
             <div className="flex items-center space-x-3">
-              <Select value={format(selectedDate, 'yyyy-MM')} onValueChange={handleMonthChange}>
-                <SelectTrigger className="w-40 border-primary/20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  {generateMonthOptions().map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/* Navigation Arrows */}
+              <div className="flex items-center border border-border rounded-lg">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onNavigatePrevious}
+                  className="h-8 w-8 p-0 hover:bg-muted"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <div className="px-3 py-1 text-sm font-medium text-foreground min-w-[120px] text-center">
+                  {getDisplayText()}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onNavigateNext}
+                  className="h-8 w-8 p-0 hover:bg-muted"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
               
               <Button
                 variant="outline"
@@ -83,6 +115,18 @@ export const Header: React.FC<HeaderProps> = ({
                 <Clock className="w-4 h-4 mr-2" />
                 Today
               </Button>
+
+              {/* View Mode Selector */}
+              <Select value={viewMode} onValueChange={(value) => onViewModeChange(value as ViewMode)}>
+                <SelectTrigger className="w-24 border-primary/20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="day">Day</SelectItem>
+                  <SelectItem value="week">Week</SelectItem>
+                  <SelectItem value="month">Month</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -110,10 +154,12 @@ export const Header: React.FC<HeaderProps> = ({
               Alarms
             </Button>
             
-            <Button variant="outline" size="sm" className="border-primary/20">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </Button>
+            <SettingsModal
+              darkMode={darkMode}
+              onDarkModeToggle={onDarkModeToggle}
+              timezone={timezone}
+              onTimezoneChange={onTimezoneChange}
+            />
           </div>
         </div>
       </div>
