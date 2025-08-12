@@ -20,7 +20,6 @@ interface CalendarGridProps {
   onTaskDrop: (taskId: string, newTime: Date) => void;
   onDateChange: (date: Date) => void;
   currentTime?: Date;
-  viewMode: 'day' | 'week' | 'month';
 }
 
 export const CalendarGrid: React.FC<CalendarGridProps> = ({
@@ -29,8 +28,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
   onTimeSlotClick,
   onTaskDrop,
   onDateChange,
-  currentTime = new Date(),
-  viewMode
+  currentTime = new Date()
 }) => {
   const startWeek = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(startWeek, i));

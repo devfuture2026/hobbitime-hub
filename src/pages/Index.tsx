@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { CalendarGrid } from '@/components/CalendarGrid';
 import { ProjectSidebar } from '@/components/ProjectSidebar';
 import { AlarmPanel } from '@/components/AlarmPanel';
@@ -7,9 +7,7 @@ import { ProjectModal } from '@/components/ProjectModal';
 import { ProjectTasksModal } from '@/components/ProjectTasksModal';
 import { Header } from '@/components/Header';
 import { TodayOverview } from '@/components/TodayOverview';
-import { addDays, startOfToday, addWeeks, addMonths, subWeeks, subMonths, subDays } from 'date-fns';
-
-type ViewMode = 'day' | 'week' | 'month';
+import { addDays, startOfToday } from 'date-fns';
 
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -21,18 +19,6 @@ const Index = () => {
   const [quickAddProjectId, setQuickAddProjectId] = useState<string>();
   const [showAlarms, setShowAlarms] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('week');
-  const [darkMode, setDarkMode] = useState(false);
-  const [timezone, setTimezone] = useState('America/New_York');
-
-  // Apply dark mode to document
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
 
   // Sample data - in a real app, this would come from a backend
   const [projects, setProjects] = useState([
@@ -150,34 +136,6 @@ const Index = () => {
     setSelectedDate(startOfToday());
   };
 
-  const handleNavigatePrevious = () => {
-    switch (viewMode) {
-      case 'day':
-        setSelectedDate(prev => subDays(prev, 1));
-        break;
-      case 'week':
-        setSelectedDate(prev => subWeeks(prev, 1));
-        break;
-      case 'month':
-        setSelectedDate(prev => subMonths(prev, 1));
-        break;
-    }
-  };
-
-  const handleNavigateNext = () => {
-    switch (viewMode) {
-      case 'day':
-        setSelectedDate(prev => addDays(prev, 1));
-        break;
-      case 'week':
-        setSelectedDate(prev => addWeeks(prev, 1));
-        break;
-      case 'month':
-        setSelectedDate(prev => addMonths(prev, 1));
-        break;
-    }
-  };
-
   const handleTaskDrop = (taskId: string, newTime: Date) => {
     setTasks(prevTasks => 
       prevTasks.map(task => 
@@ -199,14 +157,6 @@ const Index = () => {
         onGoToToday={handleGoToToday}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        onNavigatePrevious={handleNavigatePrevious}
-        onNavigateNext={handleNavigateNext}
-        darkMode={darkMode}
-        onDarkModeToggle={() => setDarkMode(!darkMode)}
-        timezone={timezone}
-        onTimezoneChange={setTimezone}
       />
 
       {/* Main Content */}
@@ -230,7 +180,6 @@ const Index = () => {
               onTaskDrop={handleTaskDrop}
               onDateChange={setSelectedDate}
               currentTime={new Date()}
-              viewMode={viewMode}
             />
           </div>
 
