@@ -223,18 +223,9 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
         </div>
       )}
 
-      {/* Calendar Grid - Fixed scrollbar and alignment with mouse wheel */}
-      <div className="flex-1 relative" style={{ scrollbarGutter: 'stable both-edges' }}>
-        <div 
-          className="h-full overflow-y-auto overflow-x-auto"
-          onWheel={(e) => {
-            // Enable smooth mouse wheel scrolling
-            e.currentTarget.scrollBy({
-              top: e.deltaY,
-              behavior: 'smooth'
-            });
-          }}
-        >
+      {/* Calendar Grid - Scrollable frame */}
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full overflow-y-scroll overflow-x-auto scroll-smooth" style={{ height: 'calc(100vh - 300px)' }}>
           {view === 'monthly' ? (
             // Monthly grid view
             <div className="grid grid-cols-7 auto-rows-fr min-h-full">
