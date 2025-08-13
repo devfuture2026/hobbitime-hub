@@ -289,11 +289,9 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                 <div key={hour} className={`grid relative border-b border-border/30 last:border-b-0 ${view === 'daily' ? 'grid-cols-[80px_1fr]' : 'grid-cols-[80px_repeat(7,1fr)]'}`} style={{ height: '60px' }}>
                   {/* Time label - Perfectly aligned */}
                   <div className="relative border-r border-border flex items-start justify-end pr-3 pt-1 bg-background">
-                    {hour > 0 && (
-                      <div className="text-xs text-muted-foreground font-medium leading-none">
-                        {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
-                      </div>
-                    )}
+                    <div className="text-xs text-muted-foreground font-medium leading-none">
+                      {hour === 0 ? '12 AM' : hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
+                    </div>
                     <div className="absolute top-0 right-0 w-3 h-px bg-border" />
                   </div>
 
