@@ -112,9 +112,13 @@ const Index = () => {
 
   const handleTaskUpdate = (updatedTasks: any[]) => {
     setTasks(updatedTasks);
-    // Update project completion counts
+    updateProjectCounts(updatedTasks);
+  };
+
+  // Update project counts based on actual tasks
+  const updateProjectCounts = (currentTasks: any[]) => {
     setProjects(projects.map(project => {
-      const projectTasks = updatedTasks.filter(task => task.projectId === project.id);
+      const projectTasks = currentTasks.filter(task => task.projectId === project.id);
       const completedTasks = projectTasks.filter(task => task.completed);
       return {
         ...project,
@@ -123,6 +127,11 @@ const Index = () => {
       };
     }));
   };
+
+  // Update project counts when tasks change
+  useEffect(() => {
+    updateProjectCounts(tasks);
+  }, [tasks]);
 
   const handleCreateProject = (projectData: any) => {
     const newProject = {
