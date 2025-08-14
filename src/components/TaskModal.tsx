@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar as CalendarIcon, Clock, Tag } from 'lucide-react';
 import { format } from 'date-fns';
+import { Input as TimeInput } from '@/components/ui/input';
 
 interface Project {
   id: string;
@@ -40,6 +41,10 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     priority: 'medium'
   });
 
+  const [customTime, setCustomTime] = useState(
+    selectedTime ? format(selectedTime, 'HH:mm') : '09:00'
+  );
+
   // Update projectId when preselectedProjectId changes
   React.useEffect(() => {
     if (preselectedProjectId) {
@@ -53,12 +58,17 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
     const selectedProject = projects.find(p => p.id === taskData.projectId);
     
+    // Parse custom time and create new date with selected date + custom time
+    const [hours, minutes] = customTime.split(':').map(Number);
+    const finalStartTime = new Date(selectedTime);
+    finalStartTime.setHours(hours, minutes, 0, 0);
+    
     const task = {
       id: Date.now().toString(),
       title: taskData.title,
       description: taskData.description,
       projectId: taskData.projectId,
-      startTime: selectedTime,
+      startTime: finalStartTime,
       duration: taskData.duration,
       priority: taskData.priority,
       color: selectedProject?.color || '#3B82F6',
@@ -74,6 +84,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
       duration: 1,
       priority: 'medium'
     });
+    setCustomTime('09:00');
   };
 
   const priorities = [
@@ -172,6 +183,20 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="start-time" className="text-sm font-medium flex items-center space-x-1">
+              <Clock className="w-4 h-4" />
+              <span>Start Time</span>
+            </Label>
+            <Input
+              id="start-time"
+              type="time"
+              value={customTime}
+              onChange={(e) => setCustomTime(e.target.value)}
+              className="border-primary/20 focus:ring-primary"
+            />
           </div>
 
           <div className="space-y-2">

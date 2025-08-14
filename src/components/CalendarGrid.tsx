@@ -14,6 +14,20 @@ interface Task {
   color: string;
 }
 
+interface Alarm {
+  id: string;
+  time: string;
+  enabled: boolean;
+  sound: string;
+  label: string;
+  recurring: boolean;
+}
+
+interface CalendarItem extends Task {
+  isAlarm?: boolean;
+  time?: string;
+}
+
 type CalendarView = 'daily' | 'weekly' | 'monthly';
 
 interface CalendarGridProps {
@@ -23,6 +37,8 @@ interface CalendarGridProps {
   onTaskDrop: (taskId: string, newTime: Date) => void;
   onDateChange: (date: Date) => void;
   currentTime?: Date;
+  alarms?: Alarm[];
+  showAlarms?: boolean;
 }
 
 export const CalendarGrid: React.FC<CalendarGridProps> = ({
@@ -31,7 +47,9 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
   onTimeSlotClick,
   onTaskDrop,
   onDateChange,
-  currentTime = new Date()
+  currentTime = new Date(),
+  alarms = [],
+  showAlarms = false
 }) => {
   const [view, setView] = useState<CalendarView>('weekly');
   
@@ -108,6 +126,16 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
     const slotTime = addHours(new Date(day.getFullYear(), day.getMonth(), day.getDate()), hour || 0);
     return tasks.filter(task => 
       isSameHour(task.startTime, slotTime)
+    );
+  };
+
+  const getAlarmsForTimeSlot = (day: Date, hour: number) => {
+    if (!showAlarms) return [];
+    const hourString = hour.toString().padStart(2, '0') + ':00';
+    return alarms.filter(alarm => 
+      alarm.enabled && 
+      alarm.time.startsWith(hourString.slice(0, 2)) &&
+      (isSameDay(day, new Date()) || alarm.recurring)
     );
   };
 
@@ -288,7 +316,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
               {hours.map(hour => (
                 <div key={hour} className={`grid relative border-b border-border/30 last:border-b-0 ${view === 'daily' ? 'grid-cols-[80px_1fr]' : 'grid-cols-[80px_repeat(7,1fr)]'}`} style={{ height: '60px' }}>
                   {/* Time label - Perfectly aligned */}
-                  <div className="relative border-r border-border flex items-start justify-end pr-3 pt-1 bg-background">
+                  <div className="relative border-r border-border flex items-center justify-end pr-3 bg-background">
                     <div className="text-xs text-muted-foreground font-medium leading-none">
                       {hour === 0 ? '12 AM' : hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
                     </div>
@@ -298,8 +326,22 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                   {/* Day slots - Perfect alignment and spacing */}
                   {displayDays.map((day, dayIndex) => {
                     const slotTasks = getTasksForTimeSlot(day, hour);
+                    const slotAlarms = getAlarmsForTimeSlot(day, hour);
                     const isCurrentSlot = isCurrentTimeSlot(day, hour);
                     const slotTime = addHours(new Date(day.getFullYear(), day.getMonth(), day.getDate()), hour);
+                    const allItems: CalendarItem[] = [
+                      ...slotTasks,
+                      ...slotAlarms.map(alarm => ({
+                        id: `alarm-${alarm.id}`,
+                        title: `🔔 ${alarm.label}`,
+                        projectId: '',
+                        startTime: new Date(),
+                        duration: 0,
+                        color: '#8B5CF6',
+                        time: alarm.time,
+                        isAlarm: true
+                      }))
+                    ];
 
                     return (
                       <div
@@ -322,29 +364,32 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                           </div>
                         )}
                         
-                        {/* Tasks with proper spacing and fit */}
+                        {/* Tasks and Alarms with proper spacing and fit */}
                         <div className="absolute inset-0 p-1">
                           <div className="h-full flex flex-col gap-0.5">
-                            {slotTasks.map((task, index) => (
+                            {allItems.map((item, index) => (
                               <div
-                                key={task.id}
-                                draggable
-                                onDragStart={(e) => handleDragStart(e, task.id)}
-                                className="px-2 py-1 rounded text-xs font-medium text-white shadow-sm cursor-move hover:shadow-md transition-all flex-shrink-0"
+                                key={item.id}
+                                draggable={!item.isAlarm}
+                                onDragStart={(e) => !item.isAlarm && handleDragStart(e, item.id)}
+                                className={cn(
+                                  "px-2 py-1 rounded text-xs font-medium text-white shadow-sm transition-all flex-shrink-0",
+                                  item.isAlarm ? "cursor-default" : "cursor-move hover:shadow-md"
+                                )}
                                 style={{ 
-                                  backgroundColor: task.color,
-                                  borderLeft: `3px solid ${task.color}`,
+                                  backgroundColor: item.color,
+                                  borderLeft: `3px solid ${item.color}`,
                                   filter: 'brightness(0.95)',
-                                  maxHeight: `${(60 - 8) / slotTasks.length - 2}px`,
+                                  maxHeight: `${(60 - 8) / allItems.length - 2}px`,
                                   minHeight: '20px'
                                 }}
-                                title={`${task.title} - ${format(task.startTime, 'HH:mm')} (${task.duration}h)`}
+                                title={item.isAlarm ? `Alarm: ${item.title} at ${item.time}` : `${item.title} - ${format(slotTime, 'HH:mm')}`}
                               >
-                                <div className="truncate font-medium leading-tight">{task.title}</div>
-                                {slotTasks.length === 1 && (
+                                <div className="truncate font-medium leading-tight">{item.title}</div>
+                                {allItems.length === 1 && !item.isAlarm && item.duration > 0 && (
                                   <div className="flex items-center justify-between text-xs opacity-90 leading-tight">
-                                    <span>{format(task.startTime, 'HH:mm')}</span>
-                                    {task.duration > 1 && <span>{task.duration}h</span>}
+                                    <span>{format(slotTime, 'HH:mm')}</span>
+                                    {item.duration > 1 && <span>{item.duration}h</span>}
                                   </div>
                                 )}
                               </div>

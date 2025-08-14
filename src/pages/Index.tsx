@@ -22,7 +22,7 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [timezone, setTimezone] = useState('UTC');
+  const [timezone, setTimezone] = useState('America/New_York');
 
   // Apply dark mode class to document
   useEffect(() => {
@@ -169,7 +169,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
+    <div className="min-h-screen bg-gradient-subtle dark:bg-gradient-subtle">
       {/* Enhanced Header */}
       <Header
         selectedDate={selectedDate}
@@ -203,6 +203,8 @@ const Index = () => {
               onTaskDrop={handleTaskDrop}
               onDateChange={setSelectedDate}
               currentTime={new Date()}
+              alarms={alarms}
+              showAlarms={showAlarms}
             />
           </div>
 
