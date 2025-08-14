@@ -2,131 +2,116 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Productivity Calendar App - Semantic Theme System */
+/* Productivity Calendar App Design System - All colors MUST be HSL */
 
 @layer base {
   :root {
-    /* Core semantic tokens */
-    --app-background: 220 20% 97%;
-    --app-card: 0 0% 100%;
-    --app-text: 220 15% 20%;
-    --app-text-muted: 220 10% 50%;
-    --app-border: 220 15% 88%;
-    --app-primary: 200 85% 45%;
-    --app-chip-bg: 210 25% 95%;
-    --app-chip-text: 220 15% 25%;
-    --app-today-highlight: 200 85% 94%;
+    --background: 220 20% 97%;
+    --foreground: 220 15% 20%;
 
-    /* Shadcn base variables */
-    --background: hsl(var(--app-background));
-    --foreground: hsl(var(--app-text));
-    --card: hsl(var(--app-card));
-    --card-foreground: hsl(var(--app-text));
-    --popover: hsl(var(--app-card));
-    --popover-foreground: hsl(var(--app-text));
-    --primary: hsl(var(--app-primary));
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 20%;
+
+    --primary: 200 85% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: hsl(var(--app-chip-bg));
-    --secondary-foreground: hsl(var(--app-chip-text));
-    --muted: hsl(var(--app-chip-bg));
-    --muted-foreground: hsl(var(--app-text-muted));
+    --primary-glow: 200 85% 65%;
+
+    --secondary: 195 25% 92%;
+    --secondary-foreground: 220 15% 25%;
+
+    --muted: 210 25% 95%;
+    --muted-foreground: 220 10% 50%;
+
     --accent: 165 75% 45%;
     --accent-foreground: 0 0% 100%;
+    --accent-light: 165 50% 85%;
+
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: hsl(var(--app-border));
-    --input: hsl(var(--app-border));
-    --ring: hsl(var(--app-primary));
 
-    /* Extended tokens */
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 200 85% 45%;
+
     --success: 142 70% 45%;
     --warning: 38 92% 50%;
-    --info: hsl(var(--app-primary));
-    --time-slot: hsl(var(--app-card));
+    --info: 200 85% 45%;
+
+    --time-slot: 0 0% 100%;
     --time-slot-hover: 200 30% 96%;
-    --time-slot-selected: hsl(var(--app-today-highlight));
-    --time-current: hsl(var(--app-primary));
+    --time-slot-selected: 200 85% 94%;
+    --time-current: 200 85% 45%;
 
-    /* Gradients and effects */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--app-primary)), hsl(165 75% 45%));
-    --gradient-subtle: linear-gradient(180deg, hsl(var(--app-background)), hsl(var(--app-chip-bg)));
-    --gradient-card: linear-gradient(145deg, hsl(var(--app-card)), hsl(210 25% 98%));
-    --shadow-soft: 0 2px 8px -2px hsl(var(--app-text) / 0.08);
-    --shadow-medium: 0 4px 16px -4px hsl(var(--app-text) / 0.12);
-    --shadow-strong: 0 8px 32px -8px hsl(var(--app-text) / 0.16);
-    --shadow-glow: 0 0 20px hsl(var(--app-primary) / 0.3);
+    --gradient-primary: linear-gradient(135deg, hsl(200 85% 45%), hsl(165 75% 45%));
+    --gradient-subtle: linear-gradient(180deg, hsl(220 20% 97%), hsl(210 25% 95%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 25% 98%));
 
-    /* Animation and spacing */
+    --shadow-soft: 0 2px 8px -2px hsl(220 15% 20% / 0.08);
+    --shadow-medium: 0 4px 16px -4px hsl(220 15% 20% / 0.12);
+    --shadow-strong: 0 8px 32px -8px hsl(220 15% 20% / 0.16);
+    --shadow-glow: 0 0 20px hsl(200 85% 45% / 0.3);
+
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
     --radius: 0.75rem;
 
-    /* Sidebar tokens */
-    --sidebar-background: hsl(var(--app-card));
-    --sidebar-foreground: hsl(var(--app-text));
-    --sidebar-primary: hsl(var(--app-text));
-    --sidebar-primary-foreground: hsl(var(--app-card));
-    --sidebar-accent: hsl(var(--app-chip-bg));
-    --sidebar-accent-foreground: hsl(var(--app-text));
-    --sidebar-border: hsl(var(--app-border));
-    --sidebar-ring: hsl(var(--app-primary));
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    /* Dark mode semantic tokens */
-    --app-background: 222 84% 4%;
-    --app-card: 224 71% 8%;
-    --app-text: 213 31% 91%;
-    --app-text-muted: 215 20% 65%;
-    --app-border: 216 34% 17%;
-    --app-primary: 200 85% 55%;
-    --app-chip-bg: 217 33% 17%;
-    --app-chip-text: 213 31% 91%;
-    --app-today-highlight: 200 85% 15%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
 
-    /* Dark mode shadcn overrides */
-    --background: hsl(var(--app-background));
-    --foreground: hsl(var(--app-text));
-    --card: hsl(var(--app-card));
-    --card-foreground: hsl(var(--app-text));
-    --popover: hsl(var(--app-card));
-    --popover-foreground: hsl(var(--app-text));
-    --primary: hsl(var(--app-primary));
-    --primary-foreground: 222 84% 4%;
-    --secondary: hsl(var(--app-chip-bg));
-    --secondary-foreground: hsl(var(--app-chip-text));
-    --muted: hsl(var(--app-chip-bg));
-    --muted-foreground: hsl(var(--app-text-muted));
-    --accent: hsl(var(--app-chip-bg));
-    --accent-foreground: hsl(var(--app-text));
-    --destructive: 0 63% 31%;
-    --destructive-foreground: hsl(var(--app-text));
-    --border: hsl(var(--app-border));
-    --input: hsl(var(--app-border));
-    --ring: hsl(var(--app-primary));
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
 
-    /* Dark mode extended tokens */
-    --time-slot: hsl(var(--app-card));
-    --time-slot-hover: 216 34% 12%;
-    --time-slot-selected: hsl(var(--app-today-highlight));
-    --time-current: hsl(var(--app-primary));
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-    /* Dark mode gradients */
-    --gradient-subtle: linear-gradient(180deg, hsl(var(--app-background)), hsl(var(--app-chip-bg)));
-    --gradient-card: linear-gradient(145deg, hsl(var(--app-card)), hsl(216 34% 12%));
-    --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
-    --shadow-medium: 0 4px 16px -4px hsl(0 0% 0% / 0.4);
-    --shadow-strong: 0 8px 32px -8px hsl(0 0% 0% / 0.5);
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
 
-    /* Dark mode sidebar */
-    --sidebar-background: hsl(var(--app-card));
-    --sidebar-foreground: hsl(var(--app-text));
-    --sidebar-primary: hsl(var(--app-primary));
-    --sidebar-primary-foreground: hsl(var(--app-background));
-    --sidebar-accent: hsl(var(--app-chip-bg));
-    --sidebar-accent-foreground: hsl(var(--app-text));
-    --sidebar-border: hsl(var(--app-border));
-    --sidebar-ring: hsl(var(--app-primary));
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -135,15 +120,7 @@
     @apply border-border;
   }
 
-  html,
   body {
-    @apply bg-background text-foreground min-h-screen;
-    font-family: system-ui, -apple-system, sans-serif;
-  }
-
-  /* Ensure full page coverage for dark mode */
-  html.dark {
-    background: hsl(var(--app-background));
-    color: hsl(var(--app-text));
+    @apply bg-background text-foreground;
   }
 }

@@ -10,7 +10,7 @@ interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   darkMode: boolean;
-  onDarkModeToggle: () => void;
+  onDarkModeToggle: (enabled: boolean) => void;
   timezone: string;
   onTimezoneChange: (timezone: string) => void;
 }
