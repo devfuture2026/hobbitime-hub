@@ -209,40 +209,47 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
         </DropdownMenu>
       </div>
 
-      {/* Header with days - Dynamic grid alignment */}
+      {/* Header with days - Perfectly aligned grid structure */}
       {view === 'monthly' ? (
-        // Monthly view header - 7 columns grid for days of week
-        <div className="grid grid-cols-7 border-b border-border bg-card sticky top-0 z-10">
+        // Monthly view header - Exact 7 column grid alignment
+        <div className="grid grid-cols-7 border-b bg-card sticky top-0 z-10" style={{ borderColor: 'hsl(var(--app-border))' }}>
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((dayName, index) => (
-            <div key={dayName} className={cn(
-              "p-3 text-center bg-muted/20 flex items-center justify-center border-r border-border last:border-r-0"
-            )}>
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <div key={dayName} className="p-3 text-center flex items-center justify-center" style={{ 
+              backgroundColor: 'hsl(var(--app-chip-bg))',
+              borderRight: index < 6 ? '1px solid hsl(var(--app-border))' : 'none'
+            }}>
+              <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'hsl(var(--app-text-muted))' }}>
                 {dayName}
               </span>
             </div>
           ))}
         </div>
       ) : (
-        // Daily/Weekly view header with time column
-        <div className={`grid border-b border-border bg-card sticky top-0 z-10 ${view === 'daily' ? 'grid-cols-[80px_1fr]' : 'grid-cols-[80px_repeat(7,1fr)]'}`}>
-          <div className="p-3 border-r border-border bg-muted/50 flex items-center justify-center">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Time</span>
+        // Daily/Weekly view header - Perfect time column alignment
+        <div className={`grid border-b bg-card sticky top-0 z-10 ${view === 'daily' ? 'grid-cols-[80px_1fr]' : 'grid-cols-[80px_repeat(7,1fr)]'}`} style={{ borderColor: 'hsl(var(--app-border))' }}>
+          <div className="p-3 flex items-center justify-center" style={{ 
+            backgroundColor: 'hsl(var(--app-chip-bg))',
+            borderRight: '1px solid hsl(var(--app-border))'
+          }}>
+            <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'hsl(var(--app-text-muted))' }}>Time</span>
           </div>
           {displayDays.map((day, index) => {
             const isToday = day.toDateString() === new Date().toDateString();
             return (
-              <div key={day.toISOString()} className={cn(
-                "p-3 text-center bg-muted/20 flex flex-col items-center justify-center",
-                (view !== 'daily' && index < displayDays.length - 1) ? "border-r border-border" : ""
-              )}>
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <div key={day.toISOString()} className="p-3 text-center flex flex-col items-center justify-center" style={{ 
+                backgroundColor: 'hsl(var(--app-chip-bg))',
+                borderRight: (view !== 'daily' && index < displayDays.length - 1) ? '1px solid hsl(var(--app-border))' : 'none'
+              }}>
+                <div className="text-xs font-medium uppercase tracking-wide" style={{ color: 'hsl(var(--app-text-muted))' }}>
                   {format(day, 'EEE')}
                 </div>
                 <div className={cn(
                   "text-xl font-semibold mt-1",
-                  isToday ? "text-primary bg-primary/10 w-8 h-8 rounded-full flex items-center justify-center" : "text-foreground"
-                )}>
+                  isToday ? "w-8 h-8 rounded-full flex items-center justify-center" : ""
+                )} style={{
+                  color: isToday ? 'hsl(var(--app-primary))' : 'hsl(var(--app-text))',
+                  backgroundColor: isToday ? 'hsl(var(--app-today-highlight))' : 'transparent'
+                }}>
                   {format(day, 'd')}
                 </div>
               </div>
@@ -251,79 +258,103 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
         </div>
       )}
 
-      {/* Calendar Grid - Scrollable frame */}
+      {/* Calendar Grid - Perfect alignment and scrolling */}
       <div className="flex-1 overflow-hidden">
-        <div className="h-full overflow-y-scroll overflow-x-auto scroll-smooth" style={{ height: 'calc(100vh - 300px)' }}>
+        <div className="h-full overflow-y-auto scroll-smooth" style={{ height: 'calc(100vh - 300px)' }}>
           {view === 'monthly' ? (
-            // Monthly grid view
-            <div className="grid grid-cols-7 auto-rows-fr min-h-full">
-              {displayDays.map((day, dayIndex) => {
-                const dayTasks = getTasksForTimeSlot(day);
-                const isToday = day.toDateString() === new Date().toDateString();
-                const isCurrentMonth = day.getMonth() === selectedDate.getMonth();
+            // Monthly grid - Always 6 rows with perfect alignment
+            <div className="grid grid-cols-7" style={{ gridTemplateRows: 'repeat(6, 120px)' }}>
+              {/* Ensure we always show 42 days (6 weeks) */}
+              {(() => {
+                const monthStart = startOfMonth(selectedDate);
+                const firstDisplayDay = startOfWeek(monthStart, { weekStartsOn: 1 });
+                const allDays = Array.from({ length: 42 }, (_, i) => addDays(firstDisplayDay, i));
                 
-                return (
-                  <div
-                    key={day.toISOString()}
-                    className={cn(
-                      "relative border-r border-b border-border/30 last:border-r-0 min-h-[120px] p-2 cursor-pointer transition-all duration-150",
-                      "hover:bg-timeSlot-hover",
-                      !isCurrentMonth && "bg-muted/20 text-muted-foreground",
-                      isToday && "bg-timeSlot-selected"
-                    )}
-                    onClick={() => onTimeSlotClick(startOfDay(day))}
-                    onDrop={(e) => handleDrop(e, startOfDay(day))}
-                    onDragOver={handleDragOver}
-                  >
-                    {/* Date number */}
-                    <div className={cn(
-                      "text-sm font-medium mb-2",
-                      isToday ? "text-primary bg-primary/10 w-6 h-6 rounded-full flex items-center justify-center" : "text-foreground"
-                    )}>
-                      {format(day, 'd')}
+                return allDays.map((day, dayIndex) => {
+                  const dayTasks = getTasksForTimeSlot(day);
+                  const isToday = day.toDateString() === new Date().toDateString();
+                  const isCurrentMonth = day.getMonth() === selectedDate.getMonth();
+                  const rowIndex = Math.floor(dayIndex / 7);
+                  const colIndex = dayIndex % 7;
+                  
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      className="relative p-2 cursor-pointer transition-all duration-150"
+                      style={{
+                        backgroundColor: isToday ? 'hsl(var(--app-today-highlight))' : 'hsl(var(--app-card))',
+                        borderRight: colIndex < 6 ? '1px solid hsl(var(--app-border))' : 'none',
+                        borderBottom: rowIndex < 5 ? '1px solid hsl(var(--app-border))' : 'none',
+                        opacity: isCurrentMonth ? 1 : 0.5,
+                        color: isCurrentMonth ? 'hsl(var(--app-text))' : 'hsl(var(--app-text-muted))'
+                      }}
+                      onClick={() => onTimeSlotClick(startOfDay(day))}
+                      onDrop={(e) => handleDrop(e, startOfDay(day))}
+                      onDragOver={handleDragOver}
+                    >
+                      {/* Date number */}
+                      <div className="text-sm font-medium mb-2" style={{
+                        color: isToday ? 'hsl(var(--app-primary))' : isCurrentMonth ? 'hsl(var(--app-text))' : 'hsl(var(--app-text-muted))',
+                        backgroundColor: isToday ? 'hsl(var(--app-primary) / 0.1)' : 'transparent',
+                        width: isToday ? '24px' : 'auto',
+                        height: isToday ? '24px' : 'auto',
+                        borderRadius: isToday ? '50%' : '0',
+                        display: isToday ? 'flex' : 'block',
+                        alignItems: isToday ? 'center' : 'normal',
+                        justifyContent: isToday ? 'center' : 'normal'
+                      }}>
+                        {format(day, 'd')}
+                      </div>
+                      
+                      {/* Tasks */}
+                      <div className="space-y-1">
+                        {dayTasks.slice(0, 3).map((task) => (
+                          <div
+                            key={task.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, task.id)}
+                            className="px-2 py-1 rounded text-xs font-medium shadow-sm cursor-move hover:shadow-md transition-all truncate"
+                            style={{ 
+                              backgroundColor: 'hsl(var(--app-chip-bg))',
+                              color: 'hsl(var(--app-chip-text))',
+                              borderLeft: `3px solid ${task.color}`
+                            }}
+                            title={`${task.title} - ${format(task.startTime, 'HH:mm')} (${task.duration}h)`}
+                          >
+                            {task.title}
+                          </div>
+                        ))}
+                        {dayTasks.length > 3 && (
+                          <div className="text-xs px-2" style={{ color: 'hsl(var(--app-text-muted))' }}>
+                            +{dayTasks.length - 3} more
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    
-                    {/* Tasks */}
-                    <div className="space-y-1">
-                      {dayTasks.slice(0, 3).map((task) => (
-                        <div
-                          key={task.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, task.id)}
-                          className="px-2 py-1 rounded text-xs font-medium text-white shadow-sm cursor-move hover:shadow-md transition-all truncate"
-                          style={{ 
-                            backgroundColor: task.color,
-                            filter: 'brightness(0.95)'
-                          }}
-                          title={`${task.title} - ${format(task.startTime, 'HH:mm')} (${task.duration}h)`}
-                        >
-                          {task.title}
-                        </div>
-                      ))}
-                      {dayTasks.length > 3 && (
-                        <div className="text-xs text-muted-foreground px-2">
-                          +{dayTasks.length - 3} more
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
           ) : (
-            // Daily/Weekly time slot view
+            // Daily/Weekly time slot view - Perfect alignment
             <div className="min-w-full">
               {hours.map(hour => (
-                <div key={hour} className={`grid relative border-b border-border/30 last:border-b-0 ${view === 'daily' ? 'grid-cols-[80px_1fr]' : 'grid-cols-[80px_repeat(7,1fr)]'}`} style={{ height: '60px' }}>
-                  {/* Time label - Perfectly aligned */}
-                  <div className="relative border-r border-border flex items-center justify-end pr-3 bg-background">
-                    <div className="text-xs text-muted-foreground font-medium leading-none">
+                <div key={hour} className={`grid relative last:border-b-0 ${view === 'daily' ? 'grid-cols-[80px_1fr]' : 'grid-cols-[80px_repeat(7,1fr)]'}`} style={{ 
+                  height: '60px',
+                  borderBottom: '1px solid hsl(var(--app-border))'
+                }}>
+                  {/* Time label - Perfect alignment with header */}
+                  <div className="relative flex items-center justify-end pr-3" style={{ 
+                    backgroundColor: 'hsl(var(--app-background))',
+                    borderRight: '1px solid hsl(var(--app-border))'
+                  }}>
+                    <div className="text-xs font-medium leading-none" style={{ color: 'hsl(var(--app-text-muted))' }}>
                       {hour === 0 ? '12 AM' : hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
                     </div>
-                    <div className="absolute top-0 right-0 w-3 h-px bg-border" />
+                    <div className="absolute top-0 right-0 w-3 h-px" style={{ backgroundColor: 'hsl(var(--app-border))' }} />
                   </div>
 
-                  {/* Day slots - Perfect alignment and spacing */}
+                  {/* Day slots - Perfect column alignment */}
                   {displayDays.map((day, dayIndex) => {
                     const slotTasks = getTasksForTimeSlot(day, hour);
                     const slotAlarms = getAlarmsForTimeSlot(day, hour);
@@ -346,11 +377,11 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                     return (
                       <div
                         key={`${day.toISOString()}-${hour}`}
-                        className={cn(
-                          "relative cursor-pointer transition-all duration-150 border-r border-border/30 last:border-r-0",
-                          "hover:bg-timeSlot-hover",
-                          isCurrentSlot && "bg-timeSlot-selected"
-                        )}
+                        className="relative cursor-pointer transition-all duration-150"
+                        style={{
+                          backgroundColor: isCurrentSlot ? 'hsl(var(--app-today-highlight))' : 'hsl(var(--app-card))',
+                          borderRight: (view !== 'daily' && dayIndex < displayDays.length - 1) ? '1px solid hsl(var(--app-border))' : 'none'
+                        }}
                         onClick={() => onTimeSlotClick(slotTime)}
                         onDrop={(e) => handleDrop(e, slotTime)}
                         onDragOver={handleDragOver}
@@ -358,13 +389,13 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                         {/* Current time indicator line */}
                         {isCurrentSlot && (
                           <div className="absolute left-0 right-0 top-1/2 transform -translate-y-1/2 z-20">
-                            <div className="h-0.5 bg-timeSlot-current relative">
-                              <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-timeSlot-current rounded-full -ml-1" />
+                            <div className="h-0.5 relative" style={{ backgroundColor: 'hsl(var(--app-primary))' }}>
+                              <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-2 h-2 rounded-full -ml-1" style={{ backgroundColor: 'hsl(var(--app-primary))' }} />
                             </div>
                           </div>
                         )}
                         
-                        {/* Tasks and Alarms with proper spacing and fit */}
+                        {/* Tasks and Alarms */}
                         <div className="absolute inset-0 p-1">
                           <div className="h-full flex flex-col gap-0.5">
                             {allItems.map((item, index) => (
@@ -373,13 +404,13 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                                 draggable={!item.isAlarm}
                                 onDragStart={(e) => !item.isAlarm && handleDragStart(e, item.id)}
                                 className={cn(
-                                  "px-2 py-1 rounded text-xs font-medium text-white shadow-sm transition-all flex-shrink-0",
+                                  "px-2 py-1 rounded text-xs font-medium shadow-sm transition-all flex-shrink-0",
                                   item.isAlarm ? "cursor-default" : "cursor-move hover:shadow-md"
                                 )}
                                 style={{ 
-                                  backgroundColor: item.color,
+                                  backgroundColor: item.isAlarm ? '#8B5CF6' : 'hsl(var(--app-chip-bg))',
+                                  color: item.isAlarm ? 'white' : 'hsl(var(--app-chip-text))',
                                   borderLeft: `3px solid ${item.color}`,
-                                  filter: 'brightness(0.95)',
                                   maxHeight: `${(60 - 8) / allItems.length - 2}px`,
                                   minHeight: '20px'
                                 }}

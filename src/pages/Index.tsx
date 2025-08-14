@@ -9,6 +9,7 @@ import { Header } from '@/components/Header';
 import { TodayOverview } from '@/components/TodayOverview';
 import { SettingsModal } from '@/components/SettingsModal';
 import { addDays, startOfToday } from 'date-fns';
+import { useTheme } from '@/hooks/useTheme';
 
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -21,17 +22,16 @@ const Index = () => {
   const [showAlarms, setShowAlarms] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const [timezone, setTimezone] = useState('America/New_York');
+  const [timezone, setTimezone] = useState(() => {
+    return localStorage.getItem('timezone') || 'America/New_York';
+  });
+  
+  const { theme, isDark, toggleTheme } = useTheme();
 
-  // Apply dark mode class to document
+  // Persist timezone preference
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
+    localStorage.setItem('timezone', timezone);
+  }, [timezone]);
 
   // Sample data - in a real app, this would come from a backend
   const [projects, setProjects] = useState([
@@ -259,8 +259,8 @@ const Index = () => {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        darkMode={darkMode}
-        onDarkModeToggle={setDarkMode}
+        darkMode={isDark}
+        onDarkModeToggle={toggleTheme}
         timezone={timezone}
         onTimezoneChange={setTimezone}
       />
