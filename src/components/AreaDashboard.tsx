@@ -52,7 +52,6 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({ areaName, tasks, p
       'Wellness': Heart,
       'Chores': Home,
       'Education': GraduationCap,
-      'Community': Users,
       'Leisure': Gamepad2,
       'Finance': DollarSign,
       'Mindfulness': Brain

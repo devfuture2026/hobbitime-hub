@@ -33,7 +33,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
     name: '',
     color: '#3B82F6',
     category: 'personal' as 'hobby' | 'work' | 'personal',
-    area: lockedArea || 'Development'
+    area: lockedArea || 'Development',
+    description: 'hello there mate'
   });
 
   const colors = [

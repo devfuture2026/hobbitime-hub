@@ -153,51 +153,70 @@ export const CategoryBoard: React.FC<CategoryBoardProps> = ({
                 >
                   {(tasksByList[list.id] || []).length === 0 ? (
                     <p className="text-muted-foreground text-sm">No tasks yet — add one below.</p>
-                  ) : (
-                    (tasksByList[list.id] || []).map(task => (
-                      <div
-                        key={task.id}
-                        className="border rounded p-2 bg-card hover:bg-muted/30 transition flex items-center justify-between"
-                        draggable
-                        onDragStart={(e) => {
-                          dragTaskIdRef.current = task.id;
-                          dragFromListIdRef.current = list.id;
-                          e.dataTransfer.effectAllowed = 'move';
-                        }}
-                        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
-                        onDrop={() => {
-                          if (!dragTaskIdRef.current) return;
-                          if (dragFromListIdRef.current === list.id) {
-                            onReorderWithinList(list.id, dragTaskIdRef.current, task.id);
-                          } else {
-                            onMoveTaskToList(dragTaskIdRef.current, list.id, task.id);
-                          }
-                          dragTaskIdRef.current = null;
-                          dragFromListIdRef.current = null;
-                        }}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={task.completed}
-                            onChange={() => onToggleTask(task.id)}
-                          />
-                          <span>{task.title}</span>
-                          {task.dueDate && (
-                            <span className="text-xs text-muted-foreground">• {new Date(task.dueDate).toLocaleDateString()}</span>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button size="sm" variant="ghost" onClick={() => {
-                            const title = window.prompt('Edit task title', task.title)?.trim();
-                            if (title) onEditTask(task.id, { title });
-                          }}>Edit</Button>
-                          <Button size="sm" variant="ghost" onClick={() => {
-                            if (window.confirm('Delete this task?')) onDeleteTask(task.id);
-                          }}>Delete</Button>
-                        </div>
-                      </div>
-                    ))
+                   ) : (
+                     (tasksByList[list.id] || []).map(task => (
+                       <div
+                         key={task.id}
+                         className={`flex items-center space-x-3 p-2 rounded-md hover:bg-muted/50 transition-colors group ${
+                           task.completed ? 'opacity-75' : ''
+                         }`}
+                         draggable
+                         onDragStart={(e) => {
+                           dragTaskIdRef.current = task.id;
+                           dragFromListIdRef.current = list.id;
+                           e.dataTransfer.effectAllowed = 'move';
+                         }}
+                         onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+                         onDrop={() => {
+                           if (!dragTaskIdRef.current) return;
+                           if (dragFromListIdRef.current === list.id) {
+                             onReorderWithinList(list.id, dragTaskIdRef.current, task.id);
+                           } else {
+                             onMoveTaskToList(dragTaskIdRef.current, list.id, task.id);
+                           }
+                           dragTaskIdRef.current = null;
+                           dragFromListIdRef.current = null;
+                         }}
+                       >
+                         <input
+                           type="checkbox"
+                           checked={task.completed}
+                           onChange={() => onToggleTask(task.id)}
+                           className="w-4 h-4 rounded border-border"
+                         />
+                         <div className="flex-1 flex items-center justify-between">
+                           <span className={`text-sm ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
+                             {task.title}
+                           </span>
+                           <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                             {task.dueDate && (
+                               <span className="text-xs text-muted-foreground">{new Date(task.dueDate).toLocaleDateString()}</span>
+                             )}
+                             <Button 
+                               size="sm" 
+                               variant="ghost" 
+                               className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" 
+                               onClick={() => {
+                                 const title = window.prompt('Edit task title', task.title)?.trim();
+                                 if (title) onEditTask(task.id, { title });
+                               }}
+                             >
+                               ✏️
+                             </Button>
+                             <Button 
+                               size="sm" 
+                               variant="ghost" 
+                               className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive" 
+                               onClick={() => {
+                                 if (window.confirm('Delete this task?')) onDeleteTask(task.id);
+                               }}
+                             >
+                               🗑️
+                             </Button>
+                           </div>
+                         </div>
+                       </div>
+                     ))
                   )}
                   <div className="pt-2">
                     <Input
@@ -223,4 +242,3 @@ export const CategoryBoard: React.FC<CategoryBoardProps> = ({
 };
 
 export default CategoryBoard;
-

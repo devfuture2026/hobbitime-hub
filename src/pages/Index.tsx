@@ -80,7 +80,7 @@ const Index = () => {
     },
     {
       id: '2',
-      name: 'Fitness Journey',
+      name: 'Work Out',
       color: '#F59E0B',
       tasksCount: 15,
       completedTasks: 10,
@@ -89,7 +89,7 @@ const Index = () => {
     },
     {
       id: '3',
-      name: 'React Development',
+      name: 'MindTrack: Otto',
       color: '#3B82F6',
       tasksCount: 8,
       completedTasks: 3,
@@ -98,7 +98,10 @@ const Index = () => {
     }
   ]);
 
-  const [tasks, setTasks] = useState<Task[]>([
+
+ const [tasks, setTasks] = useState<Task[]>([
+
+  /* This is a place holder for the tasks.
     {
       id: '1',
       title: 'Spanish Vocabulary',
@@ -119,6 +122,7 @@ const Index = () => {
       priority: 'high',
       completed: false
     }
+    */
   ]);
 
   const [alarms, setAlarms] = useState([

@@ -68,12 +68,6 @@ const areas = [
     description: 'Learning and skill development'
   },
   {
-    name: 'Community',
-    icon: Users,
-    color: '#8B5CF6',
-    description: 'Social activities and volunteering'
-  },
-  {
     name: 'Leisure',
     icon: Gamepad2,
     color: '#F59E0B',
