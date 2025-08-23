@@ -4,7 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Folder, Target, Calendar, Clock } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Folder, Target, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface Project {
   id: string;
@@ -14,6 +18,7 @@ interface Project {
   completedTasks: number;
   category: 'hobby' | 'work' | 'personal';
   area: string;
+  dueDate?: Date | null;
 }
 
 interface ProjectModalProps {
@@ -34,7 +39,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
     color: '#3B82F6',
     category: 'personal' as 'hobby' | 'work' | 'personal',
     area: lockedArea || 'Development',
-    description: 'hello there mate'
+    dueDate: null as Date | null,
   });
 
   const colors = [
@@ -44,7 +49,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
 
   const categories = [
     { value: 'hobby', label: 'Hobby', icon: Target },
-    { value: 'work', label: 'Work', icon: Calendar },
+    { value: 'work', label: 'Work', icon: CalendarIcon },
     { value: 'personal', label: 'Personal', icon: Clock }
   ];
 
@@ -69,13 +74,14 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
       name: '',
       color: '#3B82F6',
       category: 'personal',
-      area: lockedArea || 'Development'
+      area: lockedArea || 'Development',
+      dueDate: null,
     });
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[450px] bg-gradient-card border-primary/20">
+      <DialogContent className="sm:max-w-[500px] bg-gradient-card border-primary/20">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2 text-xl">
             <Folder className="w-5 h-5 text-primary" />
@@ -96,31 +102,59 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Category</Label>
-            <Select
-              value={projectData.category}
-              onValueChange={(value: 'hobby' | 'work' | 'personal') => 
-                setProjectData({ ...projectData, category: value })
-              }
-            >
-              <SelectTrigger className="border-primary/20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map(category => {
-                  const Icon = category.icon;
-                  return (
-                    <SelectItem key={category.value} value={category.value}>
-                      <div className="flex items-center space-x-2">
-                        <Icon className="w-4 h-4" />
-                        <span>{category.label}</span>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Category</Label>
+              <Select
+                value={projectData.category}
+                onValueChange={(value: 'hobby' | 'work' | 'personal') => 
+                  setProjectData({ ...projectData, category: value })
+                }
+              >
+                <SelectTrigger className="border-primary/20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(category => {
+                    const Icon = category.icon;
+                    return (
+                      <SelectItem key={category.value} value={category.value}>
+                        <div className="flex items-center space-x-2">
+                          <Icon className="w-4 h-4" />
+                          <span>{category.label}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Due Date (Optional)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal border-primary/20",
+                      !projectData.dueDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {projectData.dueDate ? format(projectData.dueDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={projectData.dueDate}
+                    onSelect={(date) => setProjectData({ ...projectData, dueDate: date })}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
           <div className="space-y-2">

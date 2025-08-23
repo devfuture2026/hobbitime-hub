@@ -11,6 +11,7 @@ interface Project {
   name: string;
   color: string;
   area: string;
+  dueDate?: Date | null;
 }
 
 interface TaskItem {
@@ -85,7 +86,14 @@ export const CategoryBoard: React.FC<CategoryBoardProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
           <button className="border px-3 py-1 rounded" onClick={onBack}>Back</button>
-          <h2 className="text-2xl font-semibold">{project.name}</h2>
+          <div>
+            <h2 className="text-2xl font-semibold">{project.name}</h2>
+            {project.dueDate && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Due: {new Date(project.dueDate).toLocaleDateString()}
+              </p>
+            )}
+          </div>
         </div>
         <div className="flex items-center space-x-4">
           <div className="w-64">

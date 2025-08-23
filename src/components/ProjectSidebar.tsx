@@ -25,6 +25,7 @@ interface Project {
   tasksCount: number;
   completedTasks: number;
   category: 'hobby' | 'work' | 'personal';
+  dueDate?: Date | null;
 }
 
 interface ProjectSidebarProps {
@@ -53,7 +54,7 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
   const getCategoryIcon = useCallback((category: Project['category']) => {
     switch (category) {
       case 'hobby': return <Target className="w-4 h-4" />;
-      case 'work': return <Calendar className="w-4 h-4 z-20" />;
+      case 'work': return <Calendar className="w-4 h-4" />;
       case 'personal': return <Clock className="w-4 h-4" />;
     }
   }, []);

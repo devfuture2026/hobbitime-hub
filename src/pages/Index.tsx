@@ -27,6 +27,9 @@ type Task = {
   dueDate?: Date | null;
   area?: string;
   category?: string;
+  effortLevel?: 'small' | 'medium' | 'large';
+  isRecurring?: boolean;
+  recurringPattern?: 'daily' | 'weekly' | 'monthly';
 };
 
 const Index = () => {
@@ -44,6 +47,7 @@ const Index = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [lists, setLists] = useState<Array<{ id: string; title: string; projectId: string }>>([]);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'active' | 'completed' | 'overdue'>('all');
+  const [quickAddTaskData, setQuickAddTaskData] = useState<{ title: string; listId: string } | null>(null);
   const draggedTaskIdRef = useRef<string | null>(null);
   const [darkMode, setDarkMode] = useState(() => {
     // Check localStorage first, then system preference
@@ -257,6 +261,7 @@ const Index = () => {
     setIsTaskModalOpen(false);
     setSelectedTime(null);
     setQuickAddProjectId(undefined);
+    setQuickAddTaskData(null);
   }, []);
 
   const handleCloseProjectModal = useCallback(() => {
@@ -392,21 +397,12 @@ const Index = () => {
                   setTasks(prev => prev.map(t => t.listId === listId ? { ...t, listId: undefined } : t));
                 }}
                 onAddTask={(listId, title) => {
-                  const project = projects.find(p => p.id === selectedCategoryId)!;
-                  const newTask = {
-                    id: Date.now().toString(),
-                    title,
-                    completed: false,
-                    projectId: project.id,
-                    listId,
-                    area: project.area,
-                    category: project.name,
-                    startTime: new Date(),
-                    duration: 1,
-                    priority: 'medium',
-                    color: project.color
-                  } as any;
-                  setTasks(prev => [...prev, newTask]);
+                  // Instead of directly creating a task, open the TaskModal with prefilled title
+                  setQuickAddProjectId(selectedCategoryId!);
+                  setSelectedTime(new Date());
+                  setIsTaskModalOpen(true);
+                  // Store the title and listId for when the modal opens
+                  setQuickAddTaskData({ title, listId });
                 }}
                 onToggleTask={(taskId) => setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t))}
                 onEditTask={(taskId, changes) => setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...changes } : t))}
@@ -463,6 +459,8 @@ const Index = () => {
           projects={projects}
           preselectedProjectId={quickAddProjectId}
           areaFilter={viewMode === 'area-detail' ? selectedArea ?? undefined : undefined}
+          prefilledTitle={quickAddTaskData?.title}
+          listId={quickAddTaskData?.listId}
         />
       )}
 

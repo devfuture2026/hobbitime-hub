@@ -23,6 +23,7 @@ interface Project {
   color: string;
   category: 'hobby' | 'work' | 'personal';
   area: string;
+  dueDate?: Date | null;
 }
 
 interface AreaDashboardProps {
@@ -52,11 +53,26 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({ areaName, tasks, p
       'Wellness': Heart,
       'Chores': Home,
       'Education': GraduationCap,
+      'Community': Users,
       'Leisure': Gamepad2,
       'Finance': DollarSign,
       'Mindfulness': Brain
     };
     return map[name] ?? Code;
+  }, []);
+
+  const getAreaColor = useCallback((name: string) => {
+    const map: Record<string, string> = {
+      'Development': '#3B82F6',
+      'Wellness': '#EF4444',
+      'Chores': '#6B7280',
+      'Education': '#10B981',
+      'Community': '#8B5CF6',
+      'Leisure': '#F59E0B',
+      'Finance': '#059669',
+      'Mindfulness': '#7C3AED'
+    };
+    return map[name] ?? '#3B82F6';
   }, []);
 
   const draggedIdRef = useRef<string | null>(null);
@@ -72,8 +88,11 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({ areaName, tasks, p
           <div className="flex items-center space-x-2">
             {(() => {
               const Icon = getAreaIcon(areaName);
+              const color = getAreaColor(areaName);
               return (
-                <span className="p-2 rounded-md bg-muted text-foreground"><Icon className="w-5 h-5" /></span>
+                <span className="p-2 rounded-md text-white" style={{ backgroundColor: color }}>
+                  <Icon className="w-5 h-5" />
+                </span>
               );
             })()}
             <h1 className="text-3xl font-bold text-foreground">{areaName}</h1>
@@ -84,7 +103,7 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({ areaName, tasks, p
             <div className="text-sm text-muted-foreground mb-1">Progress</div>
             <Progress value={progress} />
           </div>
-          <Button onClick={() => onAddCategory(areaName)} className="bg-gradient-primary text-white">Add Category</Button>
+          <Button onClick={() => onAddCategory(areaName)} className="bg-gradient-primary text-white">Add Project</Button>
         </div>
       </div>
 
@@ -92,7 +111,7 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({ areaName, tasks, p
         {areaProjects.length === 0 ? (
           <Card className="md:col-span-2">
             <CardContent className="py-8">
-              <p className="text-muted-foreground">No categories yet — add one above.</p>
+              <p className="text-muted-foreground">No projects yet — add one above.</p>
             </CardContent>
           </Card>
         ) : (
@@ -114,12 +133,16 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({ areaName, tasks, p
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: project.color }} />
-                      <CardTitle className="text-base">{project.name}</CardTitle>
+                      <div>
+                        <CardTitle className="text-base">{project.name}</CardTitle>
+                        {project.dueDate && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Due: {new Date(project.dueDate).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button size="sm" variant="ghost" className="h-7 px-2 opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); onQuickAddTask(project.id); }}>
-                        <Plus className="w-4 h-4" />
-                      </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button size="icon" variant="ghost" className="h-7 w-7 opacity-0 group-hover:opacity-100">
@@ -129,12 +152,12 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({ areaName, tasks, p
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={(e) => {
                             e.stopPropagation();
-                            const name = window.prompt('Rename category', project.name)?.trim();
+                            const name = window.prompt('Rename project', project.name)?.trim();
                             if (name) onRenameCategory(project.id, name);
                           }}>Rename</DropdownMenuItem>
                           <DropdownMenuItem onClick={(e) => {
                             e.stopPropagation();
-                            if (window.confirm('Delete this category and its tasks?')) onDeleteCategory(project.id);
+                            if (window.confirm('Delete this project and its tasks?')) onDeleteCategory(project.id);
                           }}>Delete</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

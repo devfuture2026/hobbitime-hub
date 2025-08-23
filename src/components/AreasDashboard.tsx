@@ -34,6 +34,7 @@ interface Project {
   color: string;
   category: 'hobby' | 'work' | 'personal';
   area: string;
+  dueDate?: Date | null;
 }
 
 interface AreasDashboardProps {
@@ -66,6 +67,12 @@ const areas = [
     icon: GraduationCap,
     color: '#10B981',
     description: 'Learning and skill development'
+  },
+  {
+    name: 'Community',
+    icon: Users,
+    color: '#8B5CF6',
+    description: 'Social connections and community involvement'
   },
   {
     name: 'Leisure',

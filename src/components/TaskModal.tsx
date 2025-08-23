@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar as CalendarIcon, Clock, Tag } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarIcon, Clock, Tag, Repeat } from 'lucide-react';
 import { format } from 'date-fns';
-import { Input as TimeInput } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 interface Project {
   id: string;
@@ -15,6 +17,7 @@ interface Project {
   color: string;
   category: 'hobby' | 'work' | 'personal';
   area: string;
+  dueDate?: Date | null;
 }
 
 interface TaskModalProps {
@@ -25,6 +28,8 @@ interface TaskModalProps {
   projects: Project[];
   preselectedProjectId?: string;
   areaFilter?: string;
+  prefilledTitle?: string;
+  listId?: string;
 }
 
 export const TaskModal: React.FC<TaskModalProps> = ({
@@ -34,14 +39,20 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   selectedTime,
   projects,
   preselectedProjectId,
-  areaFilter
+  areaFilter,
+  prefilledTitle,
+  listId
 }) => {
   const [taskData, setTaskData] = useState({
     title: '',
     description: '',
-    projectId: preselectedProjectId || '',
+    projectId: '',
     duration: 1,
-    priority: 'medium'
+    priority: 'medium',
+    dueDate: null as Date | null,
+    effortLevel: 'medium' as 'small' | 'medium' | 'large',
+    isRecurring: false,
+    recurringPattern: 'daily' as 'daily' | 'weekly' | 'monthly'
   });
 
   const [customTime, setCustomTime] = useState(
@@ -49,21 +60,57 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   );
 
   // Update projectId when preselectedProjectId changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (preselectedProjectId) {
       setTaskData(prev => ({ ...prev, projectId: preselectedProjectId }));
     }
   }, [preselectedProjectId]);
 
+  // Update title when prefilledTitle changes
+  useEffect(() => {
+    if (prefilledTitle) {
+      setTaskData(prev => ({ ...prev, title: prefilledTitle }));
+    }
+  }, [prefilledTitle]);
+
+  // Reset form when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setTaskData(prev => ({
+        ...prev,
+        title: prefilledTitle || '',
+        projectId: preselectedProjectId || ''
+      }));
+      setCustomTime(selectedTime ? format(selectedTime, 'HH:mm') : '09:00');
+    } else {
+      // Reset form when modal closes
+      setTaskData({
+        title: '',
+        description: '',
+        projectId: '',
+        duration: 1,
+        priority: 'medium' as const,
+        dueDate: null,
+        effortLevel: 'medium' as const,
+        isRecurring: false,
+        recurringPattern: 'daily' as const
+      });
+      setCustomTime('09:00');
+    }
+  }, [isOpen, prefilledTitle, preselectedProjectId, selectedTime]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!taskData.title || !taskData.projectId || !selectedTime) return;
+    if (!taskData.title || !taskData.projectId) return;
 
     const selectedProject = projects.find(p => p.id === taskData.projectId);
     
+    // If no selectedTime is provided, use current time
+    const baseTime = selectedTime || new Date();
+    
     // Parse custom time and create new date with selected date + custom time
     const [hours, minutes] = customTime.split(':').map(Number);
-    const finalStartTime = new Date(selectedTime);
+    const finalStartTime = new Date(baseTime);
     finalStartTime.setHours(hours, minutes, 0, 0);
     
     const task = {
@@ -77,7 +124,12 @@ export const TaskModal: React.FC<TaskModalProps> = ({
       duration: taskData.duration,
       priority: taskData.priority,
       color: selectedProject?.color || '#3B82F6',
-      completed: false
+      completed: false,
+      dueDate: taskData.dueDate,
+      effortLevel: taskData.effortLevel,
+      isRecurring: taskData.isRecurring,
+      recurringPattern: taskData.recurringPattern,
+      listId: listId
     };
 
     onCreateTask(task);
@@ -87,28 +139,48 @@ export const TaskModal: React.FC<TaskModalProps> = ({
       description: '',
       projectId: '',
       duration: 1,
-      priority: 'medium'
+      priority: 'medium' as const,
+      dueDate: null,
+      effortLevel: 'medium' as const,
+      isRecurring: false,
+      recurringPattern: 'daily' as const
     });
     setCustomTime('09:00');
   };
 
   const priorities = [
-    { value: 'low', label: 'Low', color: 'bg-accent/20' },
-    { value: 'medium', label: 'Medium', color: 'bg-warning/20' },
-    { value: 'high', label: 'High', color: 'bg-destructive/20' }
+    { value: 'low' as const, label: 'Low', color: 'bg-accent/20' },
+    { value: 'medium' as const, label: 'Medium', color: 'bg-warning/20' },
+    { value: 'high' as const, label: 'High', color: 'bg-destructive/20' }
+  ];
+
+  const effortLevels = [
+    { value: 'small' as const, label: 'Small', color: 'bg-green-500', bgColor: 'bg-green-100 text-green-800' },
+    { value: 'medium' as const, label: 'Medium', color: 'bg-yellow-500', bgColor: 'bg-yellow-100 text-yellow-800' },
+    { value: 'large' as const, label: 'Large', color: 'bg-red-500', bgColor: 'bg-red-100 text-red-800' }
+  ];
+
+  const recurringPatterns = [
+    { value: 'daily' as const, label: 'Daily' },
+    { value: 'weekly' as const, label: 'Weekly' },
+    { value: 'monthly' as const, label: 'Monthly' }
   ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] bg-gradient-card border-primary/20">
+      <DialogContent className="sm:max-w-[600px] bg-gradient-card border-primary/20">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2 text-xl">
             <CalendarIcon className="w-5 h-5 text-primary" />
             <span>Create New Task</span>
           </DialogTitle>
-          {selectedTime && (
+          {selectedTime ? (
             <p className="text-sm text-muted-foreground">
               {format(selectedTime, 'EEEE, MMMM d, yyyy • HH:mm')}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {format(new Date(), 'EEEE, MMMM d, yyyy')} • {customTime}
             </p>
           )}
         </DialogHeader>
@@ -133,7 +205,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
               value={taskData.description}
               onChange={(e) => setTaskData({ ...taskData, description: e.target.value })}
               placeholder="Add details about this task..."
-              className="border-primary/20 focus:ring-primary min-h-[100px]"
+              className="border-primary/20 focus:ring-primary min-h-[80px]"
             />
           </div>
 
@@ -190,18 +262,46 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="start-time" className="text-sm font-medium flex items-center space-x-1">
-              <Clock className="w-4 h-4" />
-              <span>Start Time</span>
-            </Label>
-            <Input
-              id="start-time"
-              type="time"
-              value={customTime}
-              onChange={(e) => setCustomTime(e.target.value)}
-              className="border-primary/20 focus:ring-primary"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="start-time" className="text-sm font-medium flex items-center space-x-1">
+                <Clock className="w-4 h-4" />
+                <span>Start Time</span>
+              </Label>
+              <Input
+                id="start-time"
+                type="time"
+                value={customTime}
+                onChange={(e) => setCustomTime(e.target.value)}
+                className="border-primary/20 focus:ring-primary"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Due Date (Optional)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal border-primary/20",
+                      !taskData.dueDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {taskData.dueDate ? format(taskData.dueDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={taskData.dueDate}
+                    onSelect={(date) => setTaskData({ ...taskData, dueDate: date })}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -223,6 +323,63 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                   {priority.label}
                 </Button>
               ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Effort Level</Label>
+            <div className="flex space-x-2">
+              {effortLevels.map(level => (
+                <Button
+                  key={level.value}
+                  type="button"
+                  variant={taskData.effortLevel === level.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTaskData({ ...taskData, effortLevel: level.value })}
+                  className={taskData.effortLevel === level.value ? level.bgColor : ""}
+                >
+                  <div className={`w-2 h-2 rounded-full mr-2 ${level.color}`} />
+                  {level.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center space-x-1">
+              <Repeat className="w-4 h-4" />
+              <span>Recurring</span>
+            </Label>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="recurring"
+                  checked={taskData.isRecurring}
+                  onChange={(e) => setTaskData({ ...taskData, isRecurring: e.target.checked })}
+                  className="w-4 h-4 rounded border-border"
+                />
+                <Label htmlFor="recurring" className="text-sm">Make this task recurring</Label>
+              </div>
+              {taskData.isRecurring && (
+                <Select
+                  value={taskData.recurringPattern}
+                  onValueChange={(value: 'daily' | 'weekly' | 'monthly') => 
+                    setTaskData({ ...taskData, recurringPattern: value })
+                  }
+                >
+                  <SelectTrigger className="w-32 border-primary/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {recurringPatterns.map(pattern => (
+                      <SelectItem key={pattern.value} value={pattern.value}>
+                        {pattern.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
 

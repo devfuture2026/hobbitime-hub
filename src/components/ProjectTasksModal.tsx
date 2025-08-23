@@ -25,6 +25,7 @@ interface Project {
   name: string;
   color: string;
   category: 'hobby' | 'work' | 'personal';
+  dueDate?: Date | null;
 }
 
 interface ProjectTasksModalProps {
