@@ -6,6 +6,7 @@ import { AreaDashboard } from '@/components/AreaDashboard';
 import { CategoryBoard } from '@/components/CategoryBoard';
 import { ProjectDetail } from '@/components/ProjectDetail';
 import { AlarmPanel } from '@/components/AlarmPanel';
+import { FocusView } from '@/components/FocusView';
 import { TaskModal } from '@/components/TaskModal';
 import { ProjectModal } from '@/components/ProjectModal';
 import { ProjectTasksModal } from '@/components/ProjectTasksModal';
@@ -13,6 +14,8 @@ import { CategorySelectionModal } from '@/components/CategorySelectionModal';
 import { ActionModal } from '@/components/ActionModal';
 import { Header } from '@/components/Header';
 import { SettingsModal } from '@/components/SettingsModal';
+import { Button } from '@/components/ui/button';
+import { Bell, BellOff } from 'lucide-react';
 import { addDays, startOfToday } from 'date-fns';
 
 type ViewMode = 'calendar' | 'areas' | 'area-detail' | 'category-detail' | 'project-detail' | 'home';
@@ -79,6 +82,7 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
+  const [showAlarmPanel, setShowAlarmPanel] = useState(true);
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedProjectDetailId, setSelectedProjectDetailId] = useState<string | null>(null);
@@ -332,10 +336,38 @@ const Index = () => {
     }));
   }, []);
 
-  // Update project counts when tasks change
+  // Auto-update project due dates based on task due dates
+  const updateProjectDueDates = useCallback((currentTasks: Task[]) => {
+    setProjects(prevProjects => prevProjects.map(project => {
+      // Get all tasks with due dates for this project
+      const projectTasksWithDueDates = currentTasks.filter(
+        task => task.projectId === project.id && task.dueDate
+      );
+      
+      if (projectTasksWithDueDates.length === 0) {
+        return project; // Keep existing due date if no tasks have due dates
+      }
+      
+      // Find the latest due date among all tasks
+      const latestDueDate = projectTasksWithDueDates.reduce((latest, task) => {
+        const taskDue = new Date(task.dueDate!);
+        return !latest || taskDue > latest ? taskDue : latest;
+      }, null as Date | null);
+      
+      // Only update if the new latest is different and later than current
+      if (latestDueDate && (!project.dueDate || latestDueDate > new Date(project.dueDate))) {
+        return { ...project, dueDate: latestDueDate };
+      }
+      
+      return project;
+    }));
+  }, []);
+
+  // Update project counts and due dates when tasks change
   useEffect(() => {
     updateProjectCounts(tasks);
-  }, [tasks, updateProjectCounts]);
+    updateProjectDueDates(tasks);
+  }, [tasks, updateProjectCounts, updateProjectDueDates]);
 
   // Debug logging for tasks and lists
   useEffect(() => {
@@ -602,7 +634,7 @@ const Index = () => {
             <TodayOverview
               tasks={tasks}
               projects={projects}
-              onNavigateToAreas={() => handleViewModeChange('areas')}
+              onNavigateToFocus={() => handleViewModeChange('home')}
             />
           )}
 
@@ -831,15 +863,52 @@ const Index = () => {
                 }}
               />
             )
+          ) : viewMode === 'home' ? (
+            <FocusView
+              tasks={tasks}
+              projects={projects}
+              alarms={alarms}
+              onTaskClick={(taskId) => {
+                setEditingTaskId(taskId);
+                setSelectedTime(tasks.find(t => t.id === taskId)?.startTime || new Date());
+                setIsTaskModalOpen(true);
+              }}
+              onProjectClick={(projectId) => {
+                setSelectedProjectDetailId(projectId);
+                setViewMode('project-detail');
+              }}
+            />
           ) : null}
 
-          {/* Alarm Panel (Always visible in calendar mode) */}
+          {/* Alarm Panel with Toggle (visible in calendar mode) */}
           {viewMode === 'calendar' && (
-            <div className="w-80">
-              <AlarmPanel
-                alarms={alarms}
-                onAlarmUpdate={handleAlarmUpdate}
-              />
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAlarmPanel(!showAlarmPanel)}
+                className="border-primary/20 hover:bg-primary/10 self-end"
+              >
+                {showAlarmPanel ? (
+                  <>
+                    <BellOff className="w-4 h-4 mr-2" />
+                    Hide Alarms
+                  </>
+                ) : (
+                  <>
+                    <Bell className="w-4 h-4 mr-2" />
+                    Show Alarms
+                  </>
+                )}
+              </Button>
+              {showAlarmPanel && (
+                <div className="w-80">
+                  <AlarmPanel
+                    alarms={alarms}
+                    onAlarmUpdate={handleAlarmUpdate}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>

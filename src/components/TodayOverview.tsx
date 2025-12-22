@@ -26,10 +26,10 @@ interface Project {
 interface TodayOverviewProps {
   tasks: Task[];
   projects: Project[];
-  onNavigateToAreas?: () => void;
+  onNavigateToFocus?: () => void;
 }
 
-export const TodayOverview: React.FC<TodayOverviewProps> = ({ tasks, projects, onNavigateToAreas }) => {
+export const TodayOverview: React.FC<TodayOverviewProps> = ({ tasks, projects, onNavigateToFocus }) => {
   // Today's tasks calculations
   const todayTasks = useMemo(() => tasks.filter(task => isToday(task.startTime)), [tasks]);
   const completedTasks = useMemo(() => todayTasks.filter(task => task.completed), [todayTasks]);
@@ -70,8 +70,8 @@ export const TodayOverview: React.FC<TodayOverviewProps> = ({ tasks, projects, o
           </CardTitle>
         </CardHeader>
         <CardContent 
-          className={onNavigateToAreas ? "cursor-pointer" : ""}
-          onClick={onNavigateToAreas}
+          className={onNavigateToFocus ? "cursor-pointer hover:bg-muted/50 transition-colors rounded-lg" : ""}
+          onClick={onNavigateToFocus}
         >
           <div className="flex items-center justify-center mb-4">
             <div className="relative w-20 h-20">
