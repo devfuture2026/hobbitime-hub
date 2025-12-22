@@ -15,7 +15,7 @@ import { Header } from '@/components/Header';
 import { SettingsModal } from '@/components/SettingsModal';
 import { addDays, startOfToday } from 'date-fns';
 
-type ViewMode = 'calendar' | 'areas' | 'area-detail' | 'category-detail' | 'project-detail';
+type ViewMode = 'calendar' | 'areas' | 'area-detail' | 'category-detail' | 'project-detail' | 'home';
 
 type Task = {
   id: string;
@@ -71,6 +71,9 @@ const Index = () => {
   const [isProjectTasksModalOpen, setIsProjectTasksModalOpen] = useState(false);
   const [isCategorySelectionModalOpen, setIsCategorySelectionModalOpen] = useState(false);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingActionId, setEditingActionId] = useState<string | null>(null);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string>();
   const [quickAddProjectId, setQuickAddProjectId] = useState<string>();
   const [searchQuery, setSearchQuery] = useState('');
@@ -258,45 +261,58 @@ const Index = () => {
   }, []);
 
   const handleCreateTask = useCallback((task: any) => {
-    console.log('Creating task:', task); // Debug log
+    console.log('Creating/updating task:', task); // Debug log
     
-    // Ensure the task has all required fields
-    const newTask = {
-      id: Date.now().toString(),
-      title: task.title || 'Untitled Task',
-      projectId: task.projectId || '',
-      startTime: task.startTime || new Date(),
-      duration: task.duration || 30,
-      color: task.color || '#3B82F6',
-      priority: task.priority || 'medium',
-      completed: false,
-      listId: task.listId,
-      dueDate: task.dueDate || null,
-      area: task.area || '',
-      category: task.category || '',
-      effortLevel: task.effortLevel || 'medium',
-      isRecurring: task.isRecurring || false,
-      recurringPattern: task.recurringPattern,
-      description: task.description || ''
-    };
+    if (editingTaskId) {
+      // Update existing task
+      setTasks(prevTasks => {
+        const updatedTasks = prevTasks.map(t => 
+          t.id === editingTaskId 
+            ? { ...t, ...task }
+            : t
+        );
+        return updatedTasks;
+      });
+      setEditingTaskId(null);
+    } else {
+      // Create new task
+      const newTask = {
+        id: task.id || Date.now().toString(),
+        title: task.title || 'Untitled Task',
+        projectId: task.projectId || '',
+        startTime: task.startTime || new Date(),
+        duration: task.duration || 30,
+        color: task.color || '#3B82F6',
+        priority: task.priority || 'medium',
+        completed: task.completed || false,
+        listId: task.listId,
+        dueDate: task.dueDate || null,
+        area: task.area || '',
+        category: task.category || '',
+        effortLevel: task.effortLevel || 'medium',
+        isRecurring: task.isRecurring || false,
+        recurringPattern: task.recurringPattern,
+        description: task.description || ''
+      };
 
-    console.log('New task object:', newTask); // Debug log
+      console.log('New task object:', newTask); // Debug log
 
-    setTasks(prevTasks => {
-      const updatedTasks = [...prevTasks, newTask];
-      console.log('Updated tasks array:', updatedTasks); // Debug log
-      return updatedTasks;
-    });
-    
-    // Update project task counts only if the task has a projectId
-    if (task.projectId) {
-      setProjects(prevProjects => prevProjects.map(project => 
-        project.id === task.projectId 
-          ? { ...project, tasksCount: project.tasksCount + 1 }
-          : project
-      ));
+      setTasks(prevTasks => {
+        const updatedTasks = [...prevTasks, newTask];
+        console.log('Updated tasks array:', updatedTasks); // Debug log
+        return updatedTasks;
+      });
+      
+      // Update project task counts only if the task has a projectId
+      if (task.projectId) {
+        setProjects(prevProjects => prevProjects.map(project => 
+          project.id === task.projectId 
+            ? { ...project, tasksCount: project.tasksCount + 1 }
+            : project
+        ));
+      }
     }
-  }, []);
+  }, [editingTaskId]);
 
   const handleTaskUpdate = useCallback((updatedTasks: any[]) => {
     setTasks(updatedTasks);
@@ -332,15 +348,28 @@ const Index = () => {
   }, [tasks, lists, selectedArea, viewMode]);
 
   const handleCreateProject = useCallback((projectData: any) => {
-    const newProject = {
-      id: Date.now().toString(),
-      ...projectData,
-      tasksCount: 0,
-      completedTasks: 0,
-      parentId: categorySelectionContext?.type === 'project' ? categorySelectionContext.id : undefined
-    };
-    setProjects(prevProjects => [...prevProjects, newProject]);
-  }, [categorySelectionContext]);
+    if (editingProjectId) {
+      // Update existing project
+      setProjects(prevProjects => 
+        prevProjects.map(p => 
+          p.id === editingProjectId 
+            ? { ...p, ...projectData }
+            : p
+        )
+      );
+      setEditingProjectId(null);
+    } else {
+      // Create new project
+      const newProject = {
+        id: Date.now().toString(),
+        ...projectData,
+        tasksCount: 0,
+        completedTasks: 0,
+        parentId: categorySelectionContext?.type === 'project' ? categorySelectionContext.id : undefined
+      };
+      setProjects(prevProjects => [...prevProjects, newProject]);
+    }
+  }, [categorySelectionContext, editingProjectId]);
 
   // Fix: Create handler to open category selection modal
   const handleOpenCategorySelection = useCallback((context?: { type: 'area' | 'project'; name: string; id?: string }) => {
@@ -401,22 +430,32 @@ const Index = () => {
   }, []);
 
   const handleCreateAction = useCallback((actionData: Action) => {
-    console.log('Creating action:', actionData);
+    console.log('Creating/updating action:', actionData);
     // Ensure the action has a valid area and doesn't cross over
     if (!actionData.area) {
       console.error('Action must have an area assigned');
       return;
     }
     
-    setActions(prevActions => {
-      const newActions = [...prevActions, actionData];
-      console.log('Updated actions:', newActions);
-      return newActions;
-    });
-  }, []);
+    if (editingActionId) {
+      // Update existing action
+      setActions(prevActions => 
+        prevActions.map(a => a.id === editingActionId ? { ...a, ...actionData } : a)
+      );
+      setEditingActionId(null);
+    } else {
+      // Create new action
+      setActions(prevActions => {
+        const newActions = [...prevActions, actionData];
+        console.log('Updated actions:', newActions);
+        return newActions;
+      });
+    }
+  }, [editingActionId]);
 
   const handleActionModalClose = useCallback(() => {
     setIsActionModalOpen(false);
+    setEditingActionId(null);
     setCategorySelectionContext(null);
   }, []);
 
@@ -498,10 +537,12 @@ const Index = () => {
     setSelectedTime(null);
     setQuickAddProjectId(undefined);
     setQuickAddTaskData(null);
+    setEditingTaskId(null);
   }, []);
 
   const handleCloseProjectModal = useCallback(() => {
     setIsProjectModalOpen(false);
+    setEditingProjectId(null);
     setCategorySelectionContext(null);
   }, []);
 
@@ -561,6 +602,7 @@ const Index = () => {
             <TodayOverview
               tasks={tasks}
               projects={projects}
+              onNavigateToAreas={() => handleViewModeChange('areas')}
             />
           )}
 
@@ -632,18 +674,32 @@ const Index = () => {
                   setProjects(prev => prev.filter(p => p.id !== projectId));
                   setTasks(prev => prev.filter(t => t.projectId !== projectId));
                 }}
+                onOpenProjectForEdit={(projectId) => {
+                  setEditingProjectId(projectId);
+                  setCategorySelectionContext(null); // Clear context when editing
+                  setIsProjectModalOpen(true);
+                }}
                 onToggleActionEnabled={(actionId, enabled) => {
                   setActions(prev => prev.map(a => a.id === actionId ? { ...a, enabled } : a));
                 }}
                 onEditAction={(actionId) => {
-                  // For now, just log - could implement edit functionality later
-                  console.log('Edit action:', actionId);
+                  setEditingActionId(actionId);
+                  setIsActionModalOpen(true);
                 }}
                 onDeleteAction={(actionId) => {
                   setActions(prev => prev.filter(a => a.id !== actionId));
                 }}
                 onRenameList={(listId, newTitle) => setLists(prev => prev.map(l => l.id === listId ? { ...l, title: newTitle } : l))}
                 onDeleteList={(listId) => setLists(prev => prev.filter(l => l.id !== listId))}
+                onMoveListToProject={(listId, projectId) => {
+                  setLists(prev => prev.map(l => l.id === listId ? { ...l, projectId: projectId || undefined } : l));
+                }}
+                onMoveActionToProject={(actionId, projectId) => {
+                  setActions(prev => prev.map(a => a.id === actionId ? { ...a, projectId: projectId || undefined } : a));
+                }}
+                onMoveProjectToProject={(projectId, targetProjectId) => {
+                  setProjects(prev => prev.map(p => p.id === projectId ? { ...p, parentId: targetProjectId || undefined } : p));
+                }}
                 onAddTask={(listId, title) => {
                   // Open TaskModal to let user enter tag data
                   setQuickAddTaskData({ title, listId });
@@ -654,6 +710,11 @@ const Index = () => {
                 onEditTask={(taskId, changes) => setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...changes } : t))}
                 onDeleteTask={(taskId) => setTasks(prev => prev.filter(t => t.id !== taskId))}
                 onCreateTask={handleCreateTask}
+                onOpenTaskForEdit={(taskId) => {
+                  setEditingTaskId(taskId);
+                  setSelectedTime(tasks.find(t => t.id === taskId)?.startTime || new Date());
+                  setIsTaskModalOpen(true);
+                }}
 
               />
             )
@@ -717,8 +778,8 @@ const Index = () => {
                   setActions(prev => prev.map(a => a.id === actionId ? { ...a, enabled } : a));
                 }}
                 onEditAction={(actionId) => {
-                  // For now, just log - could implement edit functionality later
-                  console.log('Edit action:', actionId);
+                  setEditingActionId(actionId);
+                  setIsActionModalOpen(true);
                 }}
                 onDeleteAction={(actionId) => {
                   setActions(prev => prev.filter(a => a.id !== actionId));
@@ -750,7 +811,8 @@ const Index = () => {
                   setActions(prev => prev.map(a => a.id === actionId ? { ...a, enabled } : a));
                 }}
                 onActionEdit={(actionId) => {
-                  console.log('Edit action:', actionId);
+                  setEditingActionId(actionId);
+                  setIsActionModalOpen(true);
                 }}
                 onActionDelete={(actionId) => {
                   setActions(prev => prev.filter(a => a.id !== actionId));
@@ -795,6 +857,7 @@ const Index = () => {
           areaFilter={viewMode === 'area-detail' ? selectedArea ?? undefined : undefined}
           prefilledTitle={quickAddTaskData?.title}
           listId={quickAddTaskData?.listId}
+          editingTask={editingTaskId ? tasks.find(t => t.id === editingTaskId) : undefined}
         />
       )}
 
@@ -814,7 +877,11 @@ const Index = () => {
           isOpen={isProjectModalOpen}
           onClose={handleCloseProjectModal}
           onCreateProject={handleCreateProject}
-          lockedArea={categorySelectionContext?.type === 'area' ? categorySelectionContext.name : selectedArea || undefined}
+          editingProject={editingProjectId ? projects.find(p => p.id === editingProjectId) : undefined}
+          lockedArea={editingProjectId 
+            ? undefined // Don't lock area when editing - allow changes
+            : (categorySelectionContext?.type === 'area' ? categorySelectionContext.name : selectedArea || undefined)
+          }
           parentProjectId={categorySelectionContext?.type === 'project' ? categorySelectionContext.id : undefined}
         />
       )}
@@ -824,6 +891,7 @@ const Index = () => {
            isOpen={isActionModalOpen}
            onClose={handleActionModalClose}
            onCreateAction={handleCreateAction}
+           editingAction={editingActionId ? actions.find(a => a.id === editingActionId) : undefined}
            lockedArea={(() => {
              // Determine the locked area based on context
              if (categorySelectionContext?.type === 'area') {

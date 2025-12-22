@@ -68,16 +68,21 @@ interface AreaDashboardProps {
   onReorderCategories: (areaName: string, sourceId: string, targetId: string) => void;
   onRenameCategory: (projectId: string, newName: string) => void;
   onDeleteCategory: (projectId: string) => void;
+  onMoveProjectToProject?: (projectId: string, targetProjectId: string | null) => void;
+  onOpenProjectForEdit?: (projectId: string) => void; // Add this to open ProjectModal for editing
   onToggleActionEnabled?: (actionId: string, enabled: boolean) => void;
   onEditAction?: (actionId: string) => void;
   onDeleteAction?: (actionId: string) => void;
   onRenameList?: (listId: string, newTitle: string) => void;
   onDeleteList?: (listId: string) => void;
+  onMoveListToProject?: (listId: string, projectId: string) => void;
   onAddTask?: (listId: string, title: string) => void;
   onToggleTask?: (taskId: string) => void;
   onEditTask?: (taskId: string, changes: Partial<Task>) => void;
   onDeleteTask?: (taskId: string) => void;
   onCreateTask?: (task: any) => void; // Add this for TaskModal
+  onOpenTaskForEdit?: (taskId: string) => void; // Add this to open TaskModal for editing
+  onMoveActionToProject?: (actionId: string, projectId: string) => void;
 }
 
 export const AreaDashboard: React.FC<AreaDashboardProps> = ({ 
@@ -93,16 +98,21 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({
   onReorderCategories, 
   onRenameCategory, 
   onDeleteCategory,
+  onMoveProjectToProject,
+  onOpenProjectForEdit,
   onToggleActionEnabled,
   onEditAction,
   onDeleteAction,
   onRenameList,
   onDeleteList,
+  onMoveListToProject,
   onAddTask,
   onToggleTask,
   onEditTask,
   onDeleteTask,
-  onCreateTask
+  onCreateTask,
+  onOpenTaskForEdit,
+  onMoveActionToProject
 }) => {
 
   
@@ -157,7 +167,12 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({
     } else {
       // When at area level, show lists that belong to the area (no specific project)
       const areaProjectId = `area-${areaName.toLowerCase()}`;
-      filteredLists = lists.filter(l => l.projectId === areaProjectId);
+      filteredLists = lists.filter(l => 
+        l.projectId === areaProjectId || 
+        !l.projectId || 
+        l.projectId === '' || 
+        l.projectId === null
+      );
     }
     
     // Tasks that belong to area projects
@@ -239,6 +254,7 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({
   }, []);
 
   const draggedIdRef = useRef<string | null>(null);
+  const draggedTypeRef = useRef<'project' | 'list' | 'action' | null>(null);
 
   const getAreaDescription = useCallback((name: string) => {
     const descriptions: Record<string, string> = {
@@ -293,7 +309,40 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({
                      setCurrentProjectId(null);
                      setBreadcrumbPath([]);
                    }}
-                   className="text-xs text-primary hover:underline"
+                   onDragOver={(e) => {
+                     e.preventDefault();
+                     e.stopPropagation();
+                     if (draggedTypeRef.current === 'list' || draggedTypeRef.current === 'action' || draggedTypeRef.current === 'project') {
+                       e.dataTransfer.dropEffect = 'move';
+                       e.currentTarget.classList.add('ring-2', 'ring-primary', 'rounded');
+                     }
+                   }}
+                   onDragLeave={(e) => {
+                     e.currentTarget.classList.remove('ring-2', 'ring-primary', 'rounded');
+                   }}
+                   onDrop={(e) => {
+                     e.preventDefault();
+                     e.stopPropagation();
+                     e.currentTarget.classList.remove('ring-2', 'ring-primary', 'rounded');
+                     
+                     const areaProjectId = `area-${areaName.toLowerCase()}`;
+                     
+                     if (draggedTypeRef.current === 'list' && draggedIdRef.current && onMoveListToProject) {
+                       // Move list back to area level (set to areaProjectId)
+                       onMoveListToProject(draggedIdRef.current, areaProjectId);
+                     } else if (draggedTypeRef.current === 'action' && draggedIdRef.current && onMoveActionToProject) {
+                       // Move action back to area level (no project)
+                       onMoveActionToProject(draggedIdRef.current, '');
+                     } else if (draggedTypeRef.current === 'project' && draggedIdRef.current && onMoveProjectToProject) {
+                       // Move project to area level (remove parentId)
+                       onMoveProjectToProject(draggedIdRef.current, null);
+                     }
+                     
+                     draggedIdRef.current = null;
+                     draggedTypeRef.current = null;
+                   }}
+                   className="text-xs text-primary hover:underline hover:text-primary/80 transition-colors cursor-pointer px-1 py-0.5"
+                   title={`Go to ${areaName} area (or drop items here)`}
                  >
                    {areaName}
                  </button>
@@ -308,7 +357,36 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({
                              setBreadcrumbPath(newPath);
                              setCurrentProjectId(project.id);
                            }}
-                           className="text-xs text-primary hover:underline"
+                           onDragOver={(e) => {
+                             e.preventDefault();
+                             e.stopPropagation();
+                             if (draggedTypeRef.current === 'list' || draggedTypeRef.current === 'action' || draggedTypeRef.current === 'project') {
+                               e.dataTransfer.dropEffect = 'move';
+                               e.currentTarget.classList.add('ring-2', 'ring-primary', 'rounded');
+                             }
+                           }}
+                           onDragLeave={(e) => {
+                             e.currentTarget.classList.remove('ring-2', 'ring-primary', 'rounded');
+                           }}
+                           onDrop={(e) => {
+                             e.preventDefault();
+                             e.stopPropagation();
+                             e.currentTarget.classList.remove('ring-2', 'ring-primary', 'rounded');
+                             
+                             if (draggedTypeRef.current === 'list' && draggedIdRef.current && onMoveListToProject) {
+                               onMoveListToProject(draggedIdRef.current, project.id);
+                             } else if (draggedTypeRef.current === 'action' && draggedIdRef.current && onMoveActionToProject) {
+                               onMoveActionToProject(draggedIdRef.current, project.id);
+                             } else if (draggedTypeRef.current === 'project' && draggedIdRef.current && onMoveProjectToProject) {
+                               // Move project to this project level (set parentId)
+                               onMoveProjectToProject(draggedIdRef.current, project.id);
+                             }
+                             
+                             draggedIdRef.current = null;
+                             draggedTypeRef.current = null;
+                           }}
+                           className="text-xs text-primary hover:underline hover:text-primary/80 transition-colors cursor-pointer px-1 py-0.5"
+                           title={`Go to ${project.name} (or drop items here)`}
                          >
                            {project.name}
                          </button>
@@ -351,9 +429,37 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({
                  key={project.id}
                  className="border-border group cursor-pointer w-96 h-32 flex flex-col"
                  draggable
-                 onDragStart={(e) => { draggedIdRef.current = project.id; e.dataTransfer.effectAllowed = 'move'; }}
-                 onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
-                 onDrop={() => { if (draggedIdRef.current && draggedIdRef.current !== project.id) onReorderCategories(areaName, draggedIdRef.current, project.id); draggedIdRef.current = null; }}
+                 onDragStart={(e) => { 
+                   draggedIdRef.current = project.id; 
+                   draggedTypeRef.current = 'project';
+                   e.dataTransfer.effectAllowed = 'move'; 
+                 }}
+                 onDragOver={(e) => { 
+                   e.preventDefault(); 
+                   e.dataTransfer.dropEffect = 'move';
+                   // Add visual feedback when dragging over
+                   if (draggedTypeRef.current === 'list' || draggedTypeRef.current === 'action') {
+                     e.currentTarget.classList.add('ring-2', 'ring-primary');
+                   }
+                 }}
+                 onDragLeave={(e) => {
+                   e.currentTarget.classList.remove('ring-2', 'ring-primary');
+                 }}
+                 onDrop={(e) => { 
+                   e.preventDefault();
+                   e.currentTarget.classList.remove('ring-2', 'ring-primary');
+                   
+                   if (draggedTypeRef.current === 'project' && draggedIdRef.current && draggedIdRef.current !== project.id) {
+                     onReorderCategories(areaName, draggedIdRef.current, project.id);
+                   } else if (draggedTypeRef.current === 'list' && draggedIdRef.current && onMoveListToProject) {
+                     onMoveListToProject(draggedIdRef.current, project.id);
+                   } else if (draggedTypeRef.current === 'action' && draggedIdRef.current && onMoveActionToProject) {
+                     onMoveActionToProject(draggedIdRef.current, project.id);
+                   }
+                   
+                   draggedIdRef.current = null;
+                   draggedTypeRef.current = null;
+                 }}
                  onClick={() => handleProjectClick(project.id)}
                >
                 <CardHeader className="pb-2 flex-shrink-0">
@@ -381,13 +487,24 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={(e) => {
                             e.stopPropagation();
+                            if (onOpenProjectForEdit) {
+                              onOpenProjectForEdit(project.id);
+                            }
+                          }}>Edit</DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
                             const name = window.prompt('Rename project', project.name)?.trim();
                             if (name) onRenameCategory(project.id, name);
                           }}>Rename</DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm('Delete this project and its tasks?')) onDeleteCategory(project.id);
-                          }}>Delete</DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm('Delete this project and its tasks?')) onDeleteCategory(project.id);
+                            }}
+                            className="text-destructive"
+                          >
+                            Delete
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -417,7 +534,17 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({
             return (
                             <Card
                 key={list.id}
-                className={`border-border group w-80 flex flex-col ${listTasks.length === 0 ? 'min-h-[96px]' : ''}`}
+                className={`border-border group w-80 flex flex-col ${listTasks.length === 0 ? 'min-h-[96px]' : ''} cursor-move`}
+                draggable
+                onDragStart={(e) => {
+                  draggedIdRef.current = list.id;
+                  draggedTypeRef.current = 'list';
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
+                onDragEnd={() => {
+                  draggedIdRef.current = null;
+                  draggedTypeRef.current = null;
+                }}
               >
                 <CardHeader className="py-3 flex-shrink-0">
                   <div className="flex items-center justify-between">
@@ -433,12 +560,21 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => {
+                            const name = window.prompt('Edit list name', list.title)?.trim();
+                            if (name) onRenameList(list.id, name);
+                          }}>Edit</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
                             const name = window.prompt('Rename list', list.title)?.trim();
                             if (name) onRenameList(list.id, name);
                           }}>Rename</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {
-                            if (window.confirm('Delete this list?')) onDeleteList(list.id);
-                          }}>Delete</DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              if (window.confirm('Delete this list?')) onDeleteList(list.id);
+                            }}
+                            className="text-destructive"
+                          >
+                            Delete
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
@@ -477,9 +613,14 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({
                                   className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    const title = window.prompt('Edit task', task.title)?.trim();
-                                    if (title && onEditTask) {
-                                      onEditTask(task.id, { title });
+                                    if (onOpenTaskForEdit) {
+                                      onOpenTaskForEdit(task.id);
+                                    } else {
+                                      // Fallback to simple prompt if handler not provided
+                                      const title = window.prompt('Edit task', task.title)?.trim();
+                                      if (title && onEditTask) {
+                                        onEditTask(task.id, { title });
+                                      }
                                     }
                                   }}
                                 >
@@ -541,13 +682,27 @@ export const AreaDashboard: React.FC<AreaDashboardProps> = ({
 
           {/* Actions */}
           {areaActions.map(action => (
-            <ActionCard
+            <div
               key={action.id}
-              action={action}
-              onToggleEnabled={onToggleActionEnabled}
-              onEdit={onEditAction}
-              onDelete={onDeleteAction}
-            />
+              draggable
+              onDragStart={(e) => {
+                draggedIdRef.current = action.id;
+                draggedTypeRef.current = 'action';
+                e.dataTransfer.effectAllowed = 'move';
+              }}
+              onDragEnd={() => {
+                draggedIdRef.current = null;
+                draggedTypeRef.current = null;
+              }}
+              className="cursor-move"
+            >
+              <ActionCard
+                action={action}
+                onToggleEnabled={onToggleActionEnabled}
+                onEdit={onEditAction}
+                onDelete={onDeleteAction}
+              />
+            </div>
           ))}
 
                      {/* Empty state if no categories */}

@@ -30,6 +30,7 @@ interface TaskModalProps {
   areaFilter?: string;
   prefilledTitle?: string;
   listId?: string;
+  editingTask?: any; // Add editing task support
 }
 
 export const TaskModal: React.FC<TaskModalProps> = ({
@@ -41,7 +42,8 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   preselectedProjectId,
   areaFilter,
   prefilledTitle,
-  listId
+  listId,
+  editingTask
 }) => {
   const [taskData, setTaskData] = useState({
     title: '',
@@ -73,15 +75,31 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     }
   }, [prefilledTitle]);
 
-  // Reset form when modal opens/closes
+  // Reset form when modal opens/closes or when editing task changes
   useEffect(() => {
     if (isOpen) {
-      setTaskData(prev => ({
-        ...prev,
-        title: prefilledTitle || '',
-        projectId: preselectedProjectId || ''
-      }));
-      setCustomTime(selectedTime ? format(selectedTime, 'HH:mm') : '09:00');
+      if (editingTask) {
+        // Pre-fill with existing task data
+        setTaskData({
+          title: editingTask.title || '',
+          description: editingTask.description || '',
+          projectId: editingTask.projectId || preselectedProjectId || '',
+          duration: editingTask.duration || 1,
+          priority: editingTask.priority || 'medium',
+          dueDate: editingTask.dueDate || null,
+          effortLevel: editingTask.effortLevel || 'medium',
+          isRecurring: editingTask.isRecurring || false,
+          recurringPattern: editingTask.recurringPattern || 'daily'
+        });
+        setCustomTime(editingTask.startTime ? format(editingTask.startTime, 'HH:mm') : '09:00');
+      } else {
+        setTaskData(prev => ({
+          ...prev,
+          title: prefilledTitle || '',
+          projectId: preselectedProjectId || ''
+        }));
+        setCustomTime(selectedTime ? format(selectedTime, 'HH:mm') : '09:00');
+      }
     } else {
       // Reset form when modal closes
       setTaskData({
@@ -97,7 +115,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
       });
       setCustomTime('09:00');
     }
-  }, [isOpen, prefilledTitle, preselectedProjectId, selectedTime]);
+  }, [isOpen, prefilledTitle, preselectedProjectId, selectedTime, editingTask]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,17 +135,17 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     finalStartTime.setHours(hours, minutes, 0, 0);
     
     const task = {
-      id: Date.now().toString(),
+      id: editingTask ? editingTask.id : Date.now().toString(), // Keep existing ID if editing
       title: taskData.title,
       description: taskData.description,
       projectId: taskData.projectId === 'no-project' ? undefined : taskData.projectId, // Handle "no-project" value
-      area: selectedProject?.area || '',
-      category: selectedProject?.name || '',
+      area: selectedProject?.area || editingTask?.area || '',
+      category: selectedProject?.name || editingTask?.category || '',
       startTime: finalStartTime,
       duration: taskData.duration,
       priority: taskData.priority,
-      color: selectedProject?.color || '#3B82F6',
-      completed: false,
+      color: selectedProject?.color || editingTask?.color || '#3B82F6',
+      completed: editingTask?.completed || false,
       dueDate: taskData.dueDate,
       effortLevel: taskData.effortLevel,
       isRecurring: taskData.isRecurring,
@@ -175,6 +193,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
       <DialogContent className="sm:max-w-[600px] bg-gradient-card border-primary/20">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2 text-xl">
+            {editingTask ? 'Edit Task' : 'Create Task'}
             <CalendarIcon className="w-5 h-5 text-primary" />
             <span>Create New Task</span>
           </DialogTitle>

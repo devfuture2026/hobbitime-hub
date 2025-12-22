@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar, Bell, Settings, Search, Clock, ChevronDown } from 'lucide-react';
 import { format, addMonths, subMonths } from 'date-fns';
 
-type ViewMode = 'calendar' | 'areas' | 'area-detail' | 'category-detail';
+type ViewMode = 'calendar' | 'areas' | 'area-detail' | 'category-detail' | 'home';
 
 interface HeaderProps {
   selectedDate: Date;
@@ -14,8 +14,8 @@ interface HeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onOpenSettings: () => void;
-  viewMode: 'calendar' | 'areas' | 'area-detail' | 'category-detail';
-  onViewModeChange: (mode: 'calendar' | 'areas' | 'area-detail' | 'category-detail') => void;
+  viewMode: 'calendar' | 'areas' | 'area-detail' | 'category-detail' | 'home';
+  onViewModeChange: (mode: 'calendar' | 'areas' | 'area-detail' | 'category-detail' | 'home') => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -62,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="bg-card border-b border-border shadow-soft sticky top-0">
+    <header className="bg-card border-b border-border shadow-soft sticky top-0 z-50">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Left side - Logo */}
@@ -118,12 +118,14 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
                 className="border-primary/20 hover:bg-primary/10"
               >
-                {viewMode === 'calendar' ? 'Calendar View' : 'Area View'}
+                {viewMode === 'calendar' ? 'Calendar View' : 
+                 viewMode === 'home' ? 'Home View' : 
+                 'Area View'}
                 <ChevronDown className="w-4 h-4 ml-2" />
               </Button>
               
               {isViewDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-md shadow-lg z-50">
+                <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-md shadow-lg z-[100]">
                   <div className="py-1">
                     <button
                       className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
@@ -133,6 +135,15 @@ export const Header: React.FC<HeaderProps> = ({
                       }}
                     >
                       Calendar View
+                    </button>
+                    <button
+                      className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      onClick={() => {
+                        onViewModeChange('home');
+                        setIsViewDropdownOpen(false);
+                      }}
+                    >
+                      Home View
                     </button>
                     <button
                       className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"

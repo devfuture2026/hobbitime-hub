@@ -16,6 +16,7 @@ interface ActionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateAction: (action: any) => void;
+  editingAction?: any; // Add editing action support
   lockedArea?: string;
   lockedProjectId?: string;
 }
@@ -24,6 +25,7 @@ export const ActionModal: React.FC<ActionModalProps> = ({
   isOpen,
   onClose,
   onCreateAction,
+  editingAction,
   lockedArea,
   lockedProjectId
 }) => {
@@ -57,21 +59,35 @@ export const ActionModal: React.FC<ActionModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      console.log('ActionModal - useEffect triggered, lockedArea:', lockedArea);
-      // Ensure the area is always set to the locked area to prevent cross-over
-      const enforcedArea = lockedArea || 'Development'; // Default fallback
-      setActionData({
-        title: '',
-        description: '',
-        type: 'reminder',
-        area: enforcedArea,
-        time: '09:00',
-        enabled: true,
-        daysOfWeek: [],
-        dueDate: null
-      });
+      if (editingAction) {
+        // Pre-fill with existing action data
+        setActionData({
+          title: editingAction.title || '',
+          description: editingAction.description || '',
+          type: editingAction.type || 'reminder',
+          area: editingAction.area || lockedArea || 'Development',
+          time: editingAction.time || '09:00',
+          enabled: editingAction.enabled !== undefined ? editingAction.enabled : true,
+          daysOfWeek: editingAction.daysOfWeek || [],
+          dueDate: editingAction.dueDate || null
+        });
+      } else {
+        console.log('ActionModal - useEffect triggered, lockedArea:', lockedArea);
+        // Ensure the area is always set to the locked area to prevent cross-over
+        const enforcedArea = lockedArea || 'Development'; // Default fallback
+        setActionData({
+          title: '',
+          description: '',
+          type: 'reminder',
+          area: enforcedArea,
+          time: '09:00',
+          enabled: true,
+          daysOfWeek: [],
+          dueDate: null
+        });
+      }
     }
-  }, [isOpen, lockedArea]);
+  }, [isOpen, lockedArea, editingAction]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,12 +103,12 @@ export const ActionModal: React.FC<ActionModalProps> = ({
     }
 
     const action = {
-      id: Date.now().toString(),
+      id: editingAction ? editingAction.id : Date.now().toString(), // Keep existing ID if editing
       title: actionData.title,
       description: actionData.description,
       type: actionData.type,
       area: actionData.area,
-      projectId: lockedProjectId,
+      projectId: lockedProjectId || editingAction?.projectId,
       ...(actionData.type === 'alarm' ? {
         time: actionData.time,
         enabled: actionData.enabled,
@@ -121,12 +137,13 @@ export const ActionModal: React.FC<ActionModalProps> = ({
       <DialogContent className="sm:max-w-[500px] bg-gradient-card border-primary/20">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2 text-xl">
+            {editingAction ? 'Edit Action' : 'Create Action'}
             {actionData.type === 'alarm' ? (
               <Clock className="w-5 h-5 text-primary" />
             ) : (
               <Bell className="w-5 h-5 text-accent" />
             )}
-            <span>Create New Action</span>
+            <span>{editingAction ? 'Edit Action' : 'Create Action'}</span>
           </DialogTitle>
         </DialogHeader>
 

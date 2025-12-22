@@ -26,9 +26,10 @@ interface Project {
 interface TodayOverviewProps {
   tasks: Task[];
   projects: Project[];
+  onNavigateToAreas?: () => void;
 }
 
-export const TodayOverview: React.FC<TodayOverviewProps> = ({ tasks, projects }) => {
+export const TodayOverview: React.FC<TodayOverviewProps> = ({ tasks, projects, onNavigateToAreas }) => {
   // Today's tasks calculations
   const todayTasks = useMemo(() => tasks.filter(task => isToday(task.startTime)), [tasks]);
   const completedTasks = useMemo(() => todayTasks.filter(task => task.completed), [todayTasks]);
@@ -68,7 +69,10 @@ export const TodayOverview: React.FC<TodayOverviewProps> = ({ tasks, projects })
             Today's Progress
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent 
+          className={onNavigateToAreas ? "cursor-pointer" : ""}
+          onClick={onNavigateToAreas}
+        >
           <div className="flex items-center justify-center mb-4">
             <div className="relative w-20 h-20">
               {/* Progress Ring */}
@@ -105,7 +109,7 @@ export const TodayOverview: React.FC<TodayOverviewProps> = ({ tasks, projects })
               <div className="text-xs text-muted-foreground">Total Tasks</div>
             </div>
             <div>
-              <div className="text-lg font-bold text-accent">{completedTasks.length}</div>
+              <div className="text-lg font-bold text-foreground dark:text-green-400">{completedTasks.length}</div>
               <div className="text-xs text-muted-foreground">Completed</div>
             </div>
           </div>

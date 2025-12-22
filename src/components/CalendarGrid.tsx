@@ -297,7 +297,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                     {/* Date number */}
                     <div className={cn(
                       "text-sm font-medium mb-2",
-                      isToday ? "text-primary bg-primary/10 w-6 h-6 rounded-full flex items-center justify-center" : "text-foreground"
+                      isToday ? "text-red-500 bg-primary/10 w-6 h-6 rounded-full flex items-center justify-center" : "text-foreground"
                     )}>
                       {format(day, 'd')}
                     </div>
@@ -379,12 +379,15 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                     "p-3 text-center bg-muted/20 flex flex-col items-center justify-center",
                     index === displayDays.length - 1 ? "" : "border-r border-border/30"
                   )}>
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    <div className={cn(
+                      "text-xs font-medium uppercase tracking-wide",
+                      isToday ? "text-red-500" : "text-muted-foreground"
+                    )}>
                       {format(day, 'EEE')}
                     </div>
                     <div className={cn(
                       "text-xl font-semibold mt-1",
-                      isToday ? "text-primary bg-primary/10 w-8 h-8 rounded-full flex items-center justify-center" : "text-foreground"
+                      isToday ? "text-red-500 bg-primary/10 w-8 h-8 rounded-full flex items-center justify-center" : "text-foreground"
                     )}>
                       {format(day, 'd')}
                     </div>
@@ -413,6 +416,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                     const slotTasks = getTasksForTimeSlot(day, hour);
                     const slotAlarms = getAlarmsForTimeSlot(day, hour);
                     const isCurrentSlot = isCurrentTimeSlot(day, hour);
+                    const isToday = day.toDateString() === new Date().toDateString();
                     const slotTime = addHours(new Date(day.getFullYear(), day.getMonth(), day.getDate()), hour);
                     const allItems: CalendarItem[] = [
                       ...slotTasks,
@@ -435,7 +439,8 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                           "relative cursor-pointer transition-all duration-150",
                           dayIndex === displayDays.length - 1 ? "" : "border-r border-border/30",
                           "hover:bg-timeSlot-hover",
-                          isCurrentSlot && "bg-timeSlot-selected"
+                          isCurrentSlot && "bg-timeSlot-selected",
+                          isToday && view === 'weekly' && "bg-blue-50 dark:bg-blue-950/20"
                         )}
                                                  style={{ 
                            height: '60px',
@@ -457,7 +462,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                         )}
                         
                         {/* Tasks and Alarms with proper spacing and fit */}
-                        <div className="absolute inset-0 p-1">
+                        <div className="absolute inset-0 pl-1 pt-1 pb-1 pr-0">
                           <div className="h-full flex flex-col gap-0.5">
                             {allItems.map((item, index) => (
                               <div
@@ -465,7 +470,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                                 draggable={!item.isAlarm}
                                 onDragStart={(e) => !item.isAlarm && handleDragStart(e, item.id)}
                                                                  className={cn(
-                                   "px-2 py-1 rounded text-xs font-medium text-white shadow-sm transition-all flex-shrink-0",
+                                   "w-full px-2 py-1 text-xs font-medium text-white shadow-sm transition-all flex-shrink-0",
                                    item.isAlarm ? "cursor-default" : "cursor-move hover:shadow-md"
                                  )}
                                                                  style={{ 

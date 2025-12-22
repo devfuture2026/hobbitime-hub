@@ -25,6 +25,7 @@ interface ProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateProject: (project: Omit<Project, 'id' | 'tasksCount' | 'completedTasks'>) => void;
+  editingProject?: Project; // Add editing project support
   lockedArea?: string;
   parentProjectId?: string; // For creating sub-projects
 }
@@ -33,6 +34,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   isOpen,
   onClose,
   onCreateProject,
+  editingProject,
   lockedArea,
   parentProjectId
 }) => {
@@ -45,10 +47,39 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
     parentId: parentProjectId || undefined,
   });
 
-  // Update parentId when parentProjectId changes
+  // Update form when modal opens or editing project changes
   useEffect(() => {
-    setProjectData(prev => ({ ...prev, parentId: parentProjectId || undefined }));
-  }, [parentProjectId]);
+    if (isOpen) {
+      if (editingProject) {
+        // Pre-fill with existing project data
+        setProjectData({
+          name: editingProject.name || '',
+          color: editingProject.color || '#3B82F6',
+          category: editingProject.category || 'personal',
+          area: editingProject.area || lockedArea || 'Development',
+          dueDate: editingProject.dueDate || null,
+          parentId: editingProject.parentId || parentProjectId || undefined,
+        });
+      } else {
+        // Reset for new project
+        setProjectData({
+          name: '',
+          color: '#3B82F6',
+          category: 'personal',
+          area: lockedArea || 'Development',
+          dueDate: null,
+          parentId: parentProjectId || undefined,
+        });
+      }
+    }
+  }, [isOpen, editingProject, lockedArea, parentProjectId]);
+
+  // Update parentId when parentProjectId changes (only if not editing)
+  useEffect(() => {
+    if (!editingProject) {
+      setProjectData(prev => ({ ...prev, parentId: parentProjectId || undefined }));
+    }
+  }, [parentProjectId, editingProject]);
 
   const colors = [
     '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
@@ -94,7 +125,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2 text-xl">
             <Folder className="w-5 h-5 text-primary" />
-            <span>Create New Project</span>
+            <span>{editingProject ? 'Edit Project' : 'Create New Project'}</span>
           </DialogTitle>
         </DialogHeader>
 
@@ -210,7 +241,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
               type="submit"
               className="flex-1 bg-gradient-primary text-white hover:shadow-glow transition-all duration-300"
             >
-              Create Project
+              {editingProject ? 'Save' : 'Create Project'}
             </Button>
             <Button
               type="button"

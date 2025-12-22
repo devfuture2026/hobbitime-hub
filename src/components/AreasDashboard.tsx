@@ -26,6 +26,7 @@ interface Task {
   color: string;
   priority: 'high' | 'medium' | 'low';
   completed: boolean;
+  area?: string;
 }
 
 interface Project {
@@ -95,10 +96,26 @@ const areas = [
 ];
 
 export const AreasDashboard: React.FC<AreasDashboardProps> = ({ tasks, projects, onAreaSelect }) => {
-  // Calculate stats for each area based on actual tasks mapped via project.area
+  // Calculate stats for each area based on actual tasks mapped via project.area or task.area
   const getAreaStats = (areaName: string) => {
+    // Get project IDs for this area
     const areaProjectIds = projects.filter(p => p.area === areaName).map(p => p.id);
-    const areaTasks = tasks.filter(t => areaProjectIds.includes(t.projectId));
+    
+    // Get tasks that belong to this area either:
+    // 1. Directly via task.area property
+    // 2. Indirectly via projectId (task belongs to a project in this area)
+    const areaTasks = tasks.filter(t => {
+      // Check if task has direct area assignment
+      if (t.area === areaName) {
+        return true;
+      }
+      // Check if task belongs to a project in this area
+      if (t.projectId && areaProjectIds.includes(t.projectId)) {
+        return true;
+      }
+      return false;
+    });
+    
     const completedTasks = areaTasks.filter(t => t.completed);
     const activeToday = areaTasks.filter(t => isToday(t.startTime));
 
