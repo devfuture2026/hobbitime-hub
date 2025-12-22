@@ -119,7 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
                 className="border-primary/20 hover:bg-primary/10"
               >
                 {viewMode === 'calendar' ? 'Calendar View' : 
-                 viewMode === 'home' ? 'Home View' : 
+                 viewMode === 'home' ? 'Focus View' : 
                  'Area View'}
                 <ChevronDown className="w-4 h-4 ml-2" />
               </Button>
@@ -143,7 +143,7 @@ export const Header: React.FC<HeaderProps> = ({
                         setIsViewDropdownOpen(false);
                       }}
                     >
-                      Home View
+                      Focus View
                     </button>
                     <button
                       className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"

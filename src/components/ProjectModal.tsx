@@ -19,6 +19,7 @@ interface Project {
   category: 'hobby' | 'work' | 'personal';
   area: string;
   dueDate?: Date | null;
+  parentId?: string;
 }
 
 interface ProjectModalProps {
