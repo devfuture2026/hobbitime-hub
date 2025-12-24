@@ -193,9 +193,8 @@ export const TaskModal: React.FC<TaskModalProps> = ({
       <DialogContent className="sm:max-w-[600px] bg-gradient-card border-primary/20">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2 text-xl">
-            {editingTask ? 'Edit Task' : 'Create Task'}
             <CalendarIcon className="w-5 h-5 text-primary" />
-            <span>Create New Task</span>
+            <span>{editingTask ? 'Edit Task' : 'Create New Task'}</span>
           </DialogTitle>
           {selectedTime ? (
             <p className="text-sm text-muted-foreground">
@@ -424,7 +423,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
               type="submit"
               className="flex-1 bg-gradient-primary text-white hover:shadow-glow transition-all duration-300"
             >
-              Create Task
+              {editingTask ? 'Save Task' : 'Create Task'}
             </Button>
             <Button
               type="button"
