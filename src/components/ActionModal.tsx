@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Switch } from '@/components/ui/switch';
+
 import { Calendar as CalendarIcon, Clock, Bell } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -36,9 +36,8 @@ export const ActionModal: React.FC<ActionModalProps> = ({
     area: lockedArea || '',
     // Alarm specific
     time: '09:00',
-    enabled: true,
     daysOfWeek: [] as string[],
-    // Reminder specific
+    // Shared
     dueDate: null as Date | null
   });
 
@@ -67,7 +66,6 @@ export const ActionModal: React.FC<ActionModalProps> = ({
           type: editingAction.type || 'reminder',
           area: editingAction.area || lockedArea || 'Development',
           time: editingAction.time || '09:00',
-          enabled: editingAction.enabled !== undefined ? editingAction.enabled : true,
           daysOfWeek: editingAction.daysOfWeek || [],
           dueDate: editingAction.dueDate || null
         });
@@ -81,7 +79,6 @@ export const ActionModal: React.FC<ActionModalProps> = ({
           type: 'reminder',
           area: enforcedArea,
           time: '09:00',
-          enabled: true,
           daysOfWeek: [],
           dueDate: null
         });
@@ -111,9 +108,11 @@ export const ActionModal: React.FC<ActionModalProps> = ({
       projectId: lockedProjectId || editingAction?.projectId,
       ...(actionData.type === 'alarm' ? {
         time: actionData.time,
-        enabled: actionData.enabled,
+        enabled: true,
         daysOfWeek: actionData.daysOfWeek,
+        dueDate: actionData.dueDate,
       } : {
+        time: actionData.time,
         dueDate: actionData.dueDate,
       })
     };
@@ -248,45 +247,93 @@ export const ActionModal: React.FC<ActionModalProps> = ({
                       {day.label}
                     </Button>
                   ))}
+                  <Button
+                    type="button"
+                    variant={actionData.daysOfWeek.length === 7 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      if (actionData.daysOfWeek.length === 7) {
+                        setActionData({ ...actionData, daysOfWeek: [] });
+                      } else {
+                        setActionData({ 
+                          ...actionData, 
+                          daysOfWeek: daysOfWeek.map(d => d.value) 
+                        });
+                      }
+                    }}
+                    className="h-8 px-3"
+                  >
+                    All
+                  </Button>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    checked={actionData.enabled}
-                    onCheckedChange={(enabled) => setActionData({ ...actionData, enabled })}
-                  />
-                  <Label className="text-sm font-medium">Enabled</Label>
-                </div>
+                <Label className="text-sm font-medium">Due Date (Optional)</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal border-primary/20",
+                        !actionData.dueDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {actionData.dueDate ? format(actionData.dueDate, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={actionData.dueDate}
+                      onSelect={(date) => setActionData({ ...actionData, dueDate: date })}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </>
           ) : (
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Due Date (Optional)</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal border-primary/20",
-                      !actionData.dueDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {actionData.dueDate ? format(actionData.dueDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={actionData.dueDate}
-                    onSelect={(date) => setActionData({ ...actionData, dueDate: date })}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Time</Label>
+                <Input
+                  type="time"
+                  value={actionData.time}
+                  onChange={(e) => setActionData({ ...actionData, time: e.target.value })}
+                  className="border-primary/20 focus:ring-primary"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Due Date (Optional)</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal border-primary/20",
+                        !actionData.dueDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {actionData.dueDate ? format(actionData.dueDate, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={actionData.dueDate}
+                      onSelect={(date) => setActionData({ ...actionData, dueDate: date })}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </>
           )}
 
           <div className="flex space-x-3 pt-4">

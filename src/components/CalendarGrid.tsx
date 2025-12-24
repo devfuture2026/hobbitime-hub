@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { format, startOfWeek, addDays, addHours, isSameHour, addWeeks, subWeeks, startOfDay, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
-import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, Bell, BellOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -39,6 +39,7 @@ interface CalendarGridProps {
   currentTime?: Date;
   alarms?: Alarm[];
   showAlarms?: boolean;
+  onToggleAlarms?: () => void;
 }
 
 // Helper function to format time with AM/PM
@@ -64,7 +65,8 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
   onDateChange,
   currentTime = new Date(),
   alarms = [],
-  showAlarms = false
+  showAlarms = false,
+  onToggleAlarms
 }) => {
   const [view, setView] = useState<CalendarView>('weekly');
   
@@ -243,6 +245,28 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
+        
+        {/* Alarm Toggle Button */}
+        {onToggleAlarms && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onToggleAlarms}
+            className="h-8 border-primary/20 hover:bg-primary/10"
+          >
+            {showAlarms ? (
+              <>
+                <BellOff className="w-4 h-4 mr-1" />
+                Hide Alarms
+              </>
+            ) : (
+              <>
+                <Bell className="w-4 h-4 mr-1" />
+                Show Alarms
+              </>
+            )}
+          </Button>
+        )}
         
         {/* View Selector */}
         <DropdownMenu>

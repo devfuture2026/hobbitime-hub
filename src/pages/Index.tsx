@@ -115,6 +115,16 @@ const Index = () => {
       area: 'Development',
       projectId: '5', // MindTrack: Otto project ID
       dueDate: new Date('2024-12-31')
+    },
+    {
+      id: 'wellness-alarm-1',
+      title: 'Morning Alarm',
+      description: 'Daily morning wake-up alarm',
+      type: 'alarm',
+      area: 'Wellness',
+      time: '08:00',
+      enabled: true,
+      daysOfWeek: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
     }
   ]);
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'active' | 'completed' | 'overdue'>('all');
@@ -247,16 +257,41 @@ const Index = () => {
    }
   ]);
 
-  const [alarms, setAlarms] = useState([
-    {
-      id: '1',
-      time: '06:30',
-      enabled: true,
-      sound: 'birds',
-      label: 'Morning Wake-up',
-      recurring: true
-    }
-  ]);
+  // Convert action alarms to alarm panel format
+  const alarms = useMemo(() => {
+    return actions
+      .filter(action => action.type === 'alarm')
+      .map(action => ({
+        id: action.id,
+        time: action.time || '08:00',
+        enabled: action.enabled !== false,
+        sound: 'bell',
+        label: action.title,
+        recurring: action.daysOfWeek && action.daysOfWeek.length > 0
+      }));
+  }, [actions]);
+
+  // Update alarms by updating the actions
+  const handleAlarmUpdate = useCallback((updatedAlarms: any[]) => {
+    setActions(prev => {
+      // Update existing alarm actions
+      const nonAlarmActions = prev.filter(a => a.type !== 'alarm');
+      const updatedAlarmActions = updatedAlarms.map(alarm => {
+        const existingAction = prev.find(a => a.id === alarm.id);
+        return {
+          id: alarm.id,
+          title: alarm.label,
+          description: existingAction?.description || '',
+          type: 'alarm' as const,
+          area: existingAction?.area || 'Wellness',
+          time: alarm.time,
+          enabled: alarm.enabled,
+          daysOfWeek: alarm.recurring ? ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] : []
+        };
+      });
+      return [...nonAlarmActions, ...updatedAlarmActions];
+    });
+  }, []);
 
   // Memoize event handlers to prevent recreation on every render
   const handleTimeSlotClick = useCallback((time: Date) => {
@@ -597,10 +632,6 @@ const Index = () => {
     setSelectedDate(date);
   }, []);
 
-  // Memoize alarm update handler
-  const handleAlarmUpdate = useCallback((updatedAlarms: any[]) => {
-    setAlarms(updatedAlarms);
-  }, []);
 
   // View mode change handler
   const handleViewModeChange = useCallback((mode: ViewMode) => {
@@ -650,7 +681,8 @@ const Index = () => {
                 onDateChange={handleDateChange}
                 currentTime={new Date()}
                 alarms={alarms}
-                showAlarms={true}
+                showAlarms={showAlarmPanel}
+                onToggleAlarms={() => setShowAlarmPanel(!showAlarmPanel)}
               />
             </div>
           ) : viewMode === 'areas' ? (
@@ -880,35 +912,13 @@ const Index = () => {
             />
           ) : null}
 
-          {/* Alarm Panel with Toggle (visible in calendar mode) */}
-          {viewMode === 'calendar' && (
-            <div className="flex flex-col gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAlarmPanel(!showAlarmPanel)}
-                className="border-primary/20 hover:bg-primary/10 self-end"
-              >
-                {showAlarmPanel ? (
-                  <>
-                    <BellOff className="w-4 h-4 mr-2" />
-                    Hide Alarms
-                  </>
-                ) : (
-                  <>
-                    <Bell className="w-4 h-4 mr-2" />
-                    Show Alarms
-                  </>
-                )}
-              </Button>
-              {showAlarmPanel && (
-                <div className="w-80">
-                  <AlarmPanel
-                    alarms={alarms}
-                    onAlarmUpdate={handleAlarmUpdate}
-                  />
-                </div>
-              )}
+          {/* Alarm Panel (visible in calendar mode) */}
+          {viewMode === 'calendar' && showAlarmPanel && (
+            <div className="w-80">
+              <AlarmPanel
+                alarms={alarms}
+                onAlarmUpdate={handleAlarmUpdate}
+              />
             </div>
           )}
         </div>
