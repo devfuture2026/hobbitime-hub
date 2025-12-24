@@ -374,9 +374,12 @@ const Index = () => {
   // Auto-update project due dates based on task due dates
   const updateProjectDueDates = useCallback((currentTasks: Task[]) => {
     setProjects(prevProjects => prevProjects.map(project => {
-      // Get all tasks with due dates for this project
+      // Get all tasks with due dates for this project (including tasks in lists that belong to this project)
       const projectTasksWithDueDates = currentTasks.filter(
-        task => task.projectId === project.id && task.dueDate
+        task => (task.projectId === project.id || 
+                // Also include tasks from lists associated with this project
+                (task.listId && lists.some(l => l.id === task.listId && l.projectId === project.id))) 
+               && task.dueDate
       );
       
       if (projectTasksWithDueDates.length === 0) {
@@ -389,20 +392,20 @@ const Index = () => {
         return !latest || taskDue > latest ? taskDue : latest;
       }, null as Date | null);
       
-      // Only update if the new latest is different and later than current
-      if (latestDueDate && (!project.dueDate || latestDueDate > new Date(project.dueDate))) {
+      // Update if there's a latest date (always sync to latest task due date)
+      if (latestDueDate) {
         return { ...project, dueDate: latestDueDate };
       }
       
       return project;
     }));
-  }, []);
+  }, [lists]);
 
-  // Update project counts and due dates when tasks change
+  // Update project counts and due dates when tasks or lists change
   useEffect(() => {
     updateProjectCounts(tasks);
     updateProjectDueDates(tasks);
-  }, [tasks, updateProjectCounts, updateProjectDueDates]);
+  }, [tasks, lists, updateProjectCounts, updateProjectDueDates]);
 
   // Debug logging for tasks and lists
   useEffect(() => {
